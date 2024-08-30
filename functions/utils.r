@@ -16,8 +16,7 @@ custom_theme <- function(size = 13) {
       plot.subtitle = element_text(size = 10),
       plot.caption = element_text(colour = "grey50", hjust = 0),
       legend.position = "bottom"
-    ) +
-    guides(fill = guide_legend(nrow = 2, byrow = TRUE))
+    )
 }
 
 # the following function is from here: https://modelsummary.com/vignettes/datasummary.html
@@ -30,4 +29,26 @@ cor_fun <- function(x) {
   row.names(out) <- out[, 1]
   out <- out[, 2:ncol(out)]
   return(out)
+}
+
+bind_cnty_zcta_summaries <- function(var, var_name) {
+  
+  cnts_state_avg_se <- cnts_counts_cov %>%
+    group_by(state) %>%
+    summarize(avg = mean_no_na({{var}}),
+              se = std_no_na({{var}})) %>%
+    mutate(unit = "County")
+  
+  zcta_state_avg_se <- zcta_counts_cov %>%
+    group_by(state) %>%
+    summarize(avg = mean_no_na({{var}}),
+              se = std_no_na({{var}})) %>%
+    mutate(unit = "Zipcode")
+  
+  binded_out <- bind_rows(cnts_state_avg_se, zcta_state_avg_se) %>%
+    filter(state != "DC") %>%
+    mutate(var = var_name)  # Capture variable name as a string
+  
+  return(binded_out)
+  
 }
