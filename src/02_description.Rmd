@@ -1,0 +1,116 @@
+---
+title: "Description"
+author: "Jae Yeon Kim"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+# Import pkgs 
+
+```{r}
+if (!require(pacman)) install.packages("pacman")
+
+pacman::p_load(
+  broom, 
+  tidyverse,
+  glue,
+  here,
+  purrr,
+  estimatr,
+  effectsize,
+  sandwich,
+  ggrepel,
+  patchwork,
+  ggpubr, 
+  corrplot,
+  corrr,
+  correlation, 
+  tidycensus,
+  callr,
+  naniar,
+  modelsummary,
+  confintr, 
+  tinytable, 
+  vroom, 
+  gt,
+  DT,
+  sf,
+  tigris,
+  statebins,
+  RColorBrewer
+)
+```
+
+```{r}
+
+library("tidylog", warn.conflicts = FALSE)
+
+devtools::install_github("graemeblair/stdidx")
+library(stdidx)
+
+options(es.use_symbols = TRUE) # get nice symbols
+
+source(here("functions", "utils.r"))
+
+ggplot2::theme_set(custom_theme())
+```
+
+# Import data 
+
+```{r}
+cnts_counts_cov <- read_csv(here("data_outputs", "county_counts_cov.csv"))
+
+zcta_counts_cov <- read_csv(here("data_outputs", "zcta_counts_cov.csv"))
+```
+
+# Description
+
+```{r}
+# County 
+datasummary(civic_org_sum_normalized + civic_opp_sum_normalized + volunteer_sum_normalized + membership_sum_normalized + take_action_sum_normalized + events_sum_normalized ~ mean_no_na + std_no_na, 
+            data = cnts_counts_cov, 
+            output = "tinytable",
+            fmt = 2) %>%
+  save_tt(
+    here("tables", "county_civic_opp_table.tex"),
+    overwrite = TRUE
+    )
+
+# ZCTA
+datasummary(civic_org_sum_normalized +
+            civic_opp_sum_normalized + volunteer_sum_normalized + membership_sum_normalized + take_action_sum_normalized + events_sum_normalized ~ mean_no_na + std_no_na, 
+            data = zcta_counts_cov,
+            output = "tinytable",
+            fmt = 2) %>%
+  save_tt(
+    here("tables", "zcta_civic_opp_table.tex"),
+    overwrite = TRUE
+    )
+```
+
+```{r}
+binded_out <- bind_cnty_zcta_summaries(civic_opp_index, "Civic opportunity")
+
+bar_plot <- binded_out %>%
+  ggplot(aes(x = fct_reorder(state, avg), y = avg, ymax = avg + 1.96*se, ymin = avg - 1.96*se, fill = unit)) +
+  geom_col(position = position_dodge()) +
+  geom_errorbar(position = position_dodge2()) +
+  coord_flip() +
+  labs(
+    x = "",
+    y = "Average civic opportunity index",
+    fill = "Unit")
+
+statebin_plot <- binded_out %>%
+  ggplot(aes(state = state, fill = avg)) +
+  geom_statebins() +
+  facet_wrap(~unit) +
+  theme_statebins() +
+  theme(plot.title=element_text(size=16, hjust=0)) +
+  theme(plot.margin = margin(30,30,30,30)) +
+  labs(fill = "Average civic opportunity index")
+
+bar_plot + statebin_plot + plot_annotation(tag_levels = "a")
+
+ggsave(here("plots", "civic_opp_index_plots.png"), width = 15, height = 10)
+```
