@@ -58,12 +58,23 @@ ggplot2::theme_set(custom_theme())
 # Import data 
 
 ```{r}
+
+## The first datasets 
+
 cnts_counts_cov <- read_csv(here("data_outputs", "county_counts_cov.csv"))
 
 zcta_counts_cov <- read_csv(here("data_outputs", "zcta_counts_cov.csv"))
+
+## The second datasets
+
+cnty_civic_org_type <- read_csv(here("data_outputs", "cnty_civic_org_type.csv"))
+
+zcta_civic_org_type <- read_csv(here("data_outputs", "zcta_civic_org_type.csv"))
 ```
 
 # Description
+
+## The first datasets 
 
 ```{r}
 # County 
@@ -113,4 +124,60 @@ statebin_plot <- binded_out %>%
 bar_plot + statebin_plot + plot_annotation(tag_levels = "a")
 
 ggsave(here("plots", "civic_opp_index_plots.png"), width = 15, height = 10)
+```
+
+## The second datasets 
+
+```{r}
+length(unique(cnty_civic_org_type$fips)) # n = 3,118
+
+length(unique(zcta_civic_org_type$ZCTA)) # n = 25,497
+
+sd_binded_out <- bind_rows(
+
+  cnty_civic_org_type %>%
+    select(fips, primary_org_cat) %>%
+    distinct() %>%
+    group_by(primary_org_cat) %>%
+    count() %>%
+    ungroup() %>%
+    mutate(freq = n/sum(n)) %>% 
+    mutate(unit = "County"),
+
+  zcta_civic_org_type %>%
+    select(ZCTA, primary_org_cat) %>%
+    distinct() %>%
+    group_by(primary_org_cat) %>%
+    count() %>%
+    ungroup() %>%
+    mutate(freq = n/sum(n)) %>%
+    mutate(unit = "Zipcode")
+  
+)
+```
+
+```{r}
+sd_binded_out %>%
+  ggplot(aes(x = fct_reorder(primary_org_cat, freq), y = freq, fill = unit)) +
+  geom_col(position = position_dodge(width = 0.9)) +
+  coord_flip() +
+  labs(x = "",
+       y = "Proportion",
+       fill = "Unit") +
+  scale_y_continuous(labels = scales::percent) +
+  geom_text(aes(label = scales::percent(freq, accuracy = 1)), 
+            position = position_dodge(width = 0.9), 
+            vjust = -0.5) +
+  theme(
+    legend.position = "bottom",
+    panel.border = element_blank(),   # Remove the border around the plot
+    axis.line = element_blank(),      # Remove the axis lines
+    axis.ticks = element_blank(),     # Remove the axis ticks
+    axis.text.x = element_text(size = 12), # Optional: Adjust x-axis text size
+    axis.text.y = element_text(size = 12)  # Optional: Adjust y-axis text size
+  )# Adjust `vjust` for vertical positioning of labels
+
+ggsave(here("plots", "primary_org_type.png"),
+       height = 10, 
+       width = 10)
 ```

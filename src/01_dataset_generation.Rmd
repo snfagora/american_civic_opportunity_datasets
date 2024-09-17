@@ -220,6 +220,7 @@ cnts_counts_cov <- cnts_counts_cov %>%
 
 round(mean(cnts_counts$civic_opp_sum == 0), 2) # 3% of the counties do not have any organization offering civic opportunity 
 round(mean(cnts_counts_cov$civic_opp_sum == 0), 2) # 1% of the counties do not have any organization offering civic opportunity 
+## ADD BASELINES 
 
 # export
 write_csv(cnts_counts_cov, here("data_outputs", 
@@ -266,6 +267,8 @@ zcta_counts_cov <- zcta_counts_cov %>%
 round(mean(zcta_counts$civic_opp_sum == 0), 2) # 17% of the zipcodes do not have any organization offering civic opportunity 
 round(mean(zcta_counts_cov$civic_opp_sum == 0), 2) # 15% of the zipcodes do not have any organization offering civic opportunity 
 
+## ADD BASELINES 
+
 # export
 write_csv(zcta_counts_cov, here("data_outputs", 
                                 "zcta_counts_cov.csv"))
@@ -274,17 +277,38 @@ write_csv(zcta_counts_cov, here("data_outputs",
 ## The second datasets (the civic opportunity kind)
 
 ```{r}
+class_vec <- c("arts", "civic", "community", "econ", "education", "foundation", "health", "hobby", "housing", "professional", "religious", "research", "socialfraternal", "unions", "youth")
+
+civic_orgs <- civic_orgs %>%
+  filter(!is.na(predicted)) %>%
+  mutate(class = case_match(predicted,
+                            class_vec[1] ~ "Arts & Cultural",
+                            class_vec[2] ~ "Political",
+                            class_vec[3] ~ "Community",
+                            class_vec[4] ~ "Economic",
+                            class_vec[5] ~ "Education",
+                            class_vec[6] ~ "Foundations",
+                            class_vec[7] ~ "Healthcare",
+                            class_vec[8] ~ "Hobby & Sports",
+                            class_vec[9] ~ "Housing",
+                            class_vec[10] ~ "Professional",
+                            class_vec[11] ~ "Religious",
+                            class_vec[12] ~ "Research & Think Tank",
+                            class_vec[13] ~ "Social & Fraternal",
+                            class_vec[14] ~ "Unions",
+                            class_vec[15] ~ "Youth"))
+  
+  
 # County
 
 cnty_civic_org_type <- civic_orgs %>%
-  filter(!is.na(predicted)) %>%
-  group_by(fips, predicted) %>%
+  group_by(fips, class) %>%
   count() %>%
   ungroup() %>%
   group_by(fips) %>%
   mutate(freq = n/sum(n)) %>%
   group_by(fips) %>%
-  mutate(primary_org_cat = predicted[which.max(freq)]) %>%
+  mutate(primary_org_cat = class[which.max(freq)]) %>%
   ungroup()
 
 write_csv(cnty_civic_org_type, here("data_outputs", "cnty_civic_org_type.csv"))
@@ -292,14 +316,13 @@ write_csv(cnty_civic_org_type, here("data_outputs", "cnty_civic_org_type.csv"))
 # ZCTA
 
 zcta_civic_org_type <- civic_orgs %>%
-  filter(!is.na(predicted)) %>%
-  group_by(ZCTA, predicted) %>%
+  group_by(ZCTA, class) %>%
   count() %>%
   ungroup() %>%
   group_by(ZCTA) %>%
   mutate(freq = n/sum(n)) %>%
   group_by(ZCTA) %>%
-  mutate(primary_org_cat = predicted[which.max(freq)]) %>%
+  mutate(primary_org_cat = class[which.max(freq)]) %>%
   ungroup()
 
 write_csv(zcta_civic_org_type, here("data_outputs", "zcta_civic_org_type.csv"))
