@@ -109,11 +109,19 @@ sdoh_county_wide <- sdoh_county %>%
 sdoh_zcta <- read_csv(here("raw_data", "sdoh_zcta.csv")) 
 
 sdoh_zcta <- sdoh_zcta %>%
-  select(LocationName, MeasureID, Data_Value, TotalPopulation, Geolocation)
+  select(LocationID, MeasureID, Data_Value, TotalPopulation, Geolocation)
 
 sdoh_zcta_wide <- sdoh_zcta %>%
   pivot_wider(names_from = MeasureID, 
               values_from = Data_Value)
+
+sdoh_county_wide %>%
+  select(HCOST, POV150, CROWD, AGE65, SNGPNT, BROAD, NOHSDP, UNEMP, REMNRTY) %>%
+  datasummary_correlation(., method = fun)
+
+sdoh_zcta_wide %>%
+  select(HCOST, POV150, CROWD, AGE65, SNGPNT, BROAD, NOHSDP, UNEMP, REMNRTY) %>%
+  datasummary_correlation(., method = fun)
 ```
 
 # Create a sampling frame
@@ -247,11 +255,15 @@ zcta_counts <- org_activities_mbf %>%
     take_action_sum = sum(take_action_m), 
     events_sum = sum(events_m)
   )
+```
 
+```{r}
 zcta_counts_cov <- zcta_counts %>%  
   inner_join(sdoh_zcta_wide, 
-            by = c("ZCTA" = "LocationName")) # n = 28,008, previously n = 30,988
+            by = c("ZCTA" = "LocationID")) # n = 28,008, previously n = 30,988
+```
 
+```{r}
 zcta_counts_cov <- zcta_counts_cov %>%
   ungroup() %>%
   mutate(
