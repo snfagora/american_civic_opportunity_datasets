@@ -57,9 +57,17 @@ ggplot2::theme_set(custom_theme())
 ```{r}
 # County 
 cnts_counts_cov <- read_csv(here("data_outputs", "county_counts_cov.csv"))
+cnts_civic_org_type <- read_csv(here("data_outputs", "cnty_civic_org_type.csv"))
 
 # Zipcode
 zcta_counts_cov <- read_csv(here("data_outputs", "zcta_counts_cov.csv"))
+zcta_civic_org_type <- read_csv(here("data_outputs", "zcta_civic_org_type.csv"))
+
+cnts_civic_org_type <- cnts_civic_org_type %>% left_join(cnts_counts_cov %>%
+                                                           select(FIPS, HCOST, POV150, CROWD, AGE65, SNGPNT, BROAD, NOHSDP, UNEMP, REMNRTY), by = c("fips" = "FIPS"))
+
+zcta_civic_org_type <- zcta_civic_org_type %>% left_join(zcta_counts_cov %>%
+                                                           select(ZCTA, HCOST, POV150, CROWD, AGE65, SNGPNT, BROAD, NOHSDP, UNEMP, REMNRTY), by = c("ZCTA"))
 ```
 
 # Preprocessing 
@@ -67,7 +75,7 @@ zcta_counts_cov <- read_csv(here("data_outputs", "zcta_counts_cov.csv"))
 ```{r}
 # County 
 cnts_counts_cov <- cnts_counts_cov %>%
-  select(HCOST, POV150, CROWD, AGE65, SNGPNT, BROAD, NOHSDP, UNEMP, REMNRTY) %>%
+  #select(HCOST, POV150, CROWD, AGE65, SNGPNT, BROAD, NOHSDP, UNEMP, REMNRTY) %>%
   mutate(HCOST = normalize(HCOST), 
          POV150 = normalize(POV150),
          CROWD = normalize(CROWD),
@@ -80,7 +88,7 @@ cnts_counts_cov <- cnts_counts_cov %>%
 
 # Zipcode
 zcta_counts_cov <- zcta_counts_cov %>%
-  select(HCOST, POV150, CROWD, AGE65, SNGPNT, BROAD, NOHSDP, UNEMP, REMNRTY) %>%
+  #select(HCOST, POV150, CROWD, AGE65, SNGPNT, BROAD, NOHSDP, UNEMP, REMNRTY) %>%
   mutate(HCOST = normalize(HCOST), 
          POV150 = normalize(POV150),
          CROWD = normalize(CROWD),
@@ -92,7 +100,9 @@ zcta_counts_cov <- zcta_counts_cov %>%
          REMNRTY = normalize(REMNRTY))
 ```
 
-# Validation [TBD]
+# Validation
+
+## The first dataset (degree)
 
 "HCOST" = "Housing cost burden among households" 
 "POV150" = "Persons living below 150% of the poverty level"
@@ -113,7 +123,7 @@ wrap_plots(
   cnty_pred_plot(REMNRTY, "Persons of racial or ethnic minority status"), # race
   cnty_pred_plot(AGE65, "Persons aged 65 years or older"), # age
   cnty_pred_plot(SNGPNT, "Single-parent households"), # household conditions 
-  cnty_pred_plot(UNEMP, "Unemployment among people 16 years and older in the labor force"), # household conditions 
+  cnty_pred_plot(UNEMP, "Unemployment among people 16 years and older"), # household conditions 
    # infrastructure 
   cnty_pred_plot(HCOST, "Housing cost burden among households"), # housing conditions 
   cnty_pred_plot(CROWD, "Crowding among housing units"), # housing conditions 
@@ -123,38 +133,102 @@ wrap_plots(
   plot_annotation(tag_levels = "a") +
   plot_layout(guides = "collect")
 
+ggsave(here("plots", "construct_validity_county.png"), width = 14, height = 14)
+```
+
+
+```{r}
+# Zipcode
+
+wrap_plots(
+  zcta_pred_plot(POV150, "Persons living below 150% of the poverty level"), # poverty
+  zcta_pred_plot(NOHSDP, "No high school diploma among adults aged 25 years or older"), # college education
+  zcta_pred_plot(REMNRTY, "Persons of racial or ethnic minority status"), # race
+  zcta_pred_plot(AGE65, "Persons aged 65 years or older"), # age
+  zcta_pred_plot(SNGPNT, "Single-parent households"), # household conditions 
+  zcta_pred_plot(UNEMP, "Unemployment among people 16 years and older"), # household conditions 
+   # infrastructure 
+  zcta_pred_plot(HCOST, "Housing cost burden among households"), # housing conditions 
+  zcta_pred_plot(CROWD, "Crowding among housing units"), # housing conditions 
+  zcta_pred_plot(BROAD, "No broadband internet subscription among households"), # neighborhood conditions 
+  ncol = 3
+) +
+  plot_annotation(tag_levels = "a") +
+  plot_layout(guides = "collect")
+
+ggsave(here("plots", "construct_validity_zcta.png"), width = 14, height = 14)
+```
+
+## The second dataset 
+
+```{r}
+# County
+cnts_civic_org_type <- cnts_civic_org_type %>%
+   mutate(HCOST = normalize(HCOST), 
+          POV150 = normalize(POV150),
+          CROWD = normalize(CROWD),
+          AGE65 = normalize(AGE65),
+          SNGPNT = normalize(SNGPNT),
+          BROAD = normalize(BROAD),
+          NOHSDP = normalize(NOHSDP),
+          UNEMP = normalize(UNEMP),
+          REMNRTY = normalize(REMNRTY))
+
+sum_cnts_civic_org_type <- reduce(list(summary_primary_civic_org(cnts_civic_org_type, POV150, "Living below 150% of the poverty level"),
+summary_primary_civic_org(cnts_civic_org_type, NOHSDP, "No high school diploma among 25 yrs+"),
+summary_primary_civic_org(cnts_civic_org_type, REMNRTY, "Persons of racial or ethnic minority status"),
+summary_primary_civic_org(cnts_civic_org_type, AGE65, "Persons aged 65 yrs+"),
+summary_primary_civic_org(cnts_civic_org_type, SNGPNT, "Single-parent households"),
+summary_primary_civic_org(cnts_civic_org_type, UNEMP, "Unemployment among people 16 yrs+"),
+summary_primary_civic_org(cnts_civic_org_type, HCOST, "Housing cost burden among households"),
+summary_primary_civic_org(cnts_civic_org_type, CROWD, "Crowding among housing units"),
+summary_primary_civic_org(cnts_civic_org_type, BROAD, "No broadband internet subscription")), bind_rows)
+
+sum_cnts_civic_org_type %>%
+  ggplot(aes(x = fct_reorder(primary_org_cat, avg), y = avg, ymax = hi_ci, ymin = low_ci)) +
+  geom_col(alpha = 0.2) +
+  geom_errorbar() +
+  facet_wrap(~variable, ncol = 3) +
+  coord_flip() +
+  labs(x = "Primary civic opportuntiy provider") +
+  scale_y_continuous(label = scales::percent) +
+  geom_hline(yintercept = 0.5, col = "red", linetype = 2)
+
+ggsave(here("plots", "civic_opp_provider_cnty.png"), width = 12, height = 12)
 ```
 
 ```{r}
-  filter(!str_detect(term, "(Intercept)")) %>%
-  mutate(term = case_when(
-    term == "HCOST" ~ "Housing cost burden among households", 
-    term == "POV150" ~ "Persons living below 150% of the poverty level",
-    term == "CROWD" ~ "Crowding among housing units",
-    term == "AGE65" ~ "Persons aged 65 years or older",     
-    term == "SNGPNT" ~ "Single-parent households",
-    term == "BROAD" ~ "No broadband internet subscription among households",
-    term == "NOHSDP" ~ "No high school diploma among adults aged 25 years or older",
-    term == "UNEMP" ~ "Unemployment among people 16 years and older in the labor force",
-    term == "REMNRTY" ~ "Persons of racial or ethnic minority status"
-  )) %>%
-  ggplot(aes(x = term)) +
-  geom_text_repel(aes(y = estimate, label = round(estimate, 2), size = 1.5),
-    position = position_dodge(width = 0.9),
-    col = "black",
-    show.legend = FALSE
-  ) +
-  geom_col(aes(x = fct_reorder(term, estimate), y = estimate), position = "dodge", alpha = 0.4) +
-  geom_errorbar(aes(ymax = estimate + std.error, ymin = estimate - std.error), position = "dodge", alpha = 0.4) +
-  geom_hline(yintercept = 0, linetype = "dashed", col = "red") +
-  labs(
-    x = "Predictors",
-    y = "Estimated regression coefficient",
-    fill = "Response variables"
-  ) +
-  scale_fill_viridis_d(begin = 0.1, end = 0.9) +
-  # facet_wrap(~term, ncol = 2) +
-  guides(fill = guide_legend(nrow = 2, byrow = TRUE)) +
+# ZCTA
+zcta_civic_org_type <- zcta_civic_org_type %>%
+   mutate(HCOST = normalize(HCOST), 
+          POV150 = normalize(POV150),
+          CROWD = normalize(CROWD),
+          AGE65 = normalize(AGE65),
+          SNGPNT = normalize(SNGPNT),
+          BROAD = normalize(BROAD),
+          NOHSDP = normalize(NOHSDP),
+          UNEMP = normalize(UNEMP),
+          REMNRTY = normalize(REMNRTY))
+
+sum_zcta_civic_org_type <- reduce(list(summary_primary_civic_org(zcta_civic_org_type, POV150, "Living below 150% of the poverty level"),
+summary_primary_civic_org(zcta_civic_org_type, NOHSDP, "No high school diploma among 25 yrs+"),
+summary_primary_civic_org(zcta_civic_org_type, REMNRTY, "Persons of racial or ethnic minority status"),
+summary_primary_civic_org(zcta_civic_org_type, AGE65, "Persons aged 65 yrs+"),
+summary_primary_civic_org(zcta_civic_org_type, SNGPNT, "Single-parent households"),
+summary_primary_civic_org(zcta_civic_org_type, UNEMP, "Unemployment among people 16 yrs+"),
+summary_primary_civic_org(zcta_civic_org_type, HCOST, "Housing cost burden among households"),
+summary_primary_civic_org(zcta_civic_org_type, CROWD, "Crowding among housing units"),
+summary_primary_civic_org(zcta_civic_org_type, BROAD, "No broadband internet subscription")), bind_rows)
+
+sum_zcta_civic_org_type %>%
+  ggplot(aes(x = fct_reorder(primary_org_cat, avg), y = avg, ymax = hi_ci, ymin = low_ci)) +
+  geom_col(alpha = 0.2) +
+  geom_errorbar() +
+  facet_wrap(~variable, ncol = 3) +
   coord_flip() +
-  theme(legend.position = "bottom")
+  labs(x = "Primary civic opportuntiy provider") +
+  scale_y_continuous(label = scales::percent) +
+  geom_hline(yintercept = 0.5, col = "red", linetype = 2)
+
+ggsave(here("plots", "civic_opp_provider_zcta.png"), width = 12, height = 12)
 ```
