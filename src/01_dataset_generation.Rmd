@@ -36,6 +36,7 @@ pacman::p_load(
   DT,
   sf,
   tigris,
+  zipcodeR, 
   statebins,
   RColorBrewer
 )
@@ -117,11 +118,11 @@ sdoh_zcta_wide <- sdoh_zcta %>%
 
 sdoh_county_wide %>%
   select(HCOST, POV150, CROWD, AGE65, SNGPNT, BROAD, NOHSDP, UNEMP, REMNRTY) %>%
-  datasummary_correlation(., method = fun)
+  datasummary_correlation(.)
 
 sdoh_zcta_wide %>%
   select(HCOST, POV150, CROWD, AGE65, SNGPNT, BROAD, NOHSDP, UNEMP, REMNRTY) %>%
-  datasummary_correlation(., method = fun)
+  datasummary_correlation(.)
 ```
 
 # Create a sampling frame
@@ -260,7 +261,26 @@ zcta_counts <- org_activities_mbf %>%
 ```{r}
 zcta_counts_cov <- zcta_counts %>%  
   inner_join(sdoh_zcta_wide, 
-            by = c("ZCTA" = "LocationID")) # n = 28,008, previously n = 30,988
+            by = c("ZCTA" = "LocationID")) # n = 28,008, previously n = 30,988, missing n = 2,980 or 11%
+```
+
+```{r}
+missing_zctas <- setdiff(zcta_counts$ZCTA, sdoh_zcta_wide$LocationID)
+
+missing_df <- zcta_counts %>%
+  filter(ZCTA %in% missing_zctas)
+
+missing_coords <- zipcodeR::geocode_zip(unique(zcta_counts$ZCTA)) %>%
+  filter(!is.na(lat)) %>%
+  filter(zipcode %in% missing_zctas)
+
+ggplot() +
+  borders("state") +  # Draw state boundaries
+  geom_point(data = missing_coords, aes(x = lng, y = lat), 
+             color = "red", size = 3, alpha = 0.7) +  # Plot missing ZIP Codes
+  labs(title = "Missing ZIP Codes", x = "Longitude", y = "Latitude") +
+  coord_map(xlim = c(-125, -66), ylim = c(25, 50)) +
+  theme_minimal()  # Use minimal theme to ensure clean visualization
 ```
 
 ```{r}

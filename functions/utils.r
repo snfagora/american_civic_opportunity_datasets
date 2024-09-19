@@ -15,6 +15,7 @@ normalize <- function(x) {
 }
 
 cnty_pred_plot <- function(var, var_name) {
+  
   # Capture the variable
   var <- enquo(var)
   
@@ -42,14 +43,13 @@ cnty_pred_plot <- function(var, var_name) {
   
   # Get the confidence intervals for the prediction
   ci95 <- predict(model, cnts_counts_cov, interval = "confidence", level = 0.95) %>%
-    as.data.frame() %>%
-    rename(fit = fit, lwr = lwr, upr = upr)
+    as.data.frame()  # Columns will already be named fit, lwr, upr
   
   # Plot
   cnts_counts_cov %>%
     bind_cols(ci95) %>%
     ggplot(aes(x = !!var, y = civic_opp_sum_normalized)) +
-    geom_jitter(alpha = 0.5) +
+    geom_jitter(alpha = 0.2) +
     geom_line(aes(y = fit, col = "OLS fit")) +
     geom_ribbon(aes(ymin = lwr, ymax = upr, fill = "95% CIs"), alpha = 0.2) +
     annotate(
@@ -62,20 +62,24 @@ cnty_pred_plot <- function(var, var_name) {
     labs(
       y = "Civic opportunity scores",
       x = var_name,
-      col = "Lines",
-      fill = "Error bars"
+      col = "OLS fit",
+      fill = "95% CIs"
     ) +
-    scale_x_continuous(label = scales::percent) +
+    scale_x_continuous(labels = scales::percent) +  # Fixed `label` to `labels`
     theme_minimal()
 }
 
 zcta_pred_plot <- function(var, var_name) {
-
+  
+  # Add a small constant to avoid log10(0) errors
+  zcta_counts_cov <- zcta_counts_cov %>%
+    mutate(civic_opp_sum_normalized = civic_opp_sum_normalized + 1)
+  
   # Capture the variable
   var <- enquo(var)
   
   # Create the formula
-  formula <- as.formula(glue("civic_opp_sum_normalized ~ {quo_name(var)}"))
+  formula <- as.formula(glue("log10(civic_opp_sum_normalized + 1) ~ {quo_name(var)}"))
   
   # Create the linear model
   model <- lm(formula, data = zcta_counts_cov)
@@ -98,14 +102,13 @@ zcta_pred_plot <- function(var, var_name) {
   
   # Get the confidence intervals for the prediction
   ci95 <- predict(model, zcta_counts_cov, interval = "confidence", level = 0.95) %>%
-    as.data.frame() %>%
-    rename(fit = fit, lwr = lwr, upr = upr)
+    as.data.frame()
   
-  # Plot
+  # Plot (log10 applied to y-axis)
   zcta_counts_cov %>%
     bind_cols(ci95) %>%
-    ggplot(aes(x = !!var, y = civic_opp_sum_normalized)) +
-    geom_jitter(alpha = 0.5) +
+    ggplot(aes(x = !!var, y = log10(civic_opp_sum_normalized + 1))) +
+    geom_jitter(alpha = 0.2) +
     geom_line(aes(y = fit, col = "OLS fit")) +
     geom_ribbon(aes(ymin = lwr, ymax = upr, fill = "95% CIs"), alpha = 0.2) +
     annotate(
@@ -116,15 +119,14 @@ zcta_pred_plot <- function(var, var_name) {
       size = 4, col = "black"
     ) +
     labs(
-      y = "Civic opportunity scores",
+      y = "Log10(Civic opportunity scores)",
       x = var_name,
-      col = "Lines",
-      fill = "Error bars"
+      col = "OLS fits",
+      fill = "95% CIs"
     ) +
-    scale_x_continuous(label = scales::percent) +
+    scale_x_continuous(labels = scales::percent) + 
     theme_minimal()
 }
-
 
 mean_no_na <- function(x) mean(x, na.rm = T)
 
