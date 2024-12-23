@@ -25,23 +25,15 @@ pacman::p_load(
   corrplot,
   corrr,
   correlation, 
-  tidycensus,
   callr,
-  naniar,
   modelsummary,
   confintr, 
   tinytable, 
-  vroom, 
-  gt,
-  DT,
+  vroom,
   sf,
-  tigris,
   statebins,
   RColorBrewer
 )
-```
-
-```{r}
 
 library("tidylog", warn.conflicts = FALSE)
 
@@ -61,20 +53,27 @@ ggplot2::theme_set(custom_theme())
 
 ## The first datasets 
 
+# 3216 * 27
 cnts_counts_cov <- read_csv(here("data_outputs", "county_counts_cov.csv"))
 
+# 28,008 * 27
 zcta_counts_cov <- read_csv(here("data_outputs", "zcta_counts_cov.csv"))
 
 ## The second datasets
 
+# 30,014 * 5
 cnty_civic_org_type <- read_csv(here("data_outputs", "cnty_civic_org_type.csv"))
 
+# 149,064 * 5
 zcta_civic_org_type <- read_csv(here("data_outputs", "zcta_civic_org_type.csv"))
+
 ```
 
 # Description
 
 ## The first datasets 
+
+### Table 4 
 
 ```{r}
 # County 
@@ -83,10 +82,14 @@ datasummary(civic_org_sum_normalized + civic_opp_sum_normalized + volunteer_sum_
             output = "tinytable",
             fmt = 2) %>%
   save_tt(
-    here("tables", "county_civic_opp_table.tex"),
+    here("tables", "table4.tex"),
     overwrite = TRUE
     )
+```
 
+### Table 5 
+
+```{r}
 # ZCTA
 datasummary(civic_org_sum_normalized +
             civic_opp_sum_normalized + volunteer_sum_normalized + membership_sum_normalized + take_action_sum_normalized + events_sum_normalized ~ mean_no_na + std_no_na, 
@@ -94,10 +97,12 @@ datasummary(civic_org_sum_normalized +
             output = "tinytable",
             fmt = 2) %>%
   save_tt(
-    here("tables", "zcta_civic_opp_table.tex"),
+    here("tables", "table5.tex"),
     overwrite = TRUE
     )
 ```
+
+### Figure 2
 
 ```{r}
 binded_out <- bind_cnty_zcta_summaries(civic_opp_index, "Civic opportunity")
@@ -123,20 +128,20 @@ statebin_plot <- binded_out %>%
 
 bar_plot + statebin_plot + plot_annotation(tag_levels = "a")
 
-ggsave(here("plots", "civic_opp_index_plots.png"), width = 15, height = 10)
+ggsave(here("plots", "figure2.png"), width = 15, height = 10)
 ```
 
 ## The second datasets 
 
 ```{r}
-length(unique(cnty_civic_org_type$fips)) # n = 3,118
+length(unique(cnty_civic_org_type$FIPS)) # n = 3,118
 
 length(unique(zcta_civic_org_type$ZCTA)) # n = 25,497
 
 sd_binded_out <- bind_rows(
 
   cnty_civic_org_type %>%
-    select(fips, primary_org_cat) %>%
+    select(FIPS, primary_org_cat) %>%
     distinct() %>%
     group_by(primary_org_cat) %>%
     count() %>%
@@ -155,6 +160,8 @@ sd_binded_out <- bind_rows(
   
 )
 ```
+
+### Figure 3 
 
 ```{r}
 sd_binded_out %>%
@@ -177,7 +184,7 @@ sd_binded_out %>%
     axis.text.y = element_text(size = 12)  # Optional: Adjust y-axis text size
   )# Adjust `vjust` for vertical positioning of labels
 
-ggsave(here("plots", "primary_org_type.png"),
+ggsave(here("plots", "figure3.png"),
        height = 10, 
        width = 10)
 ```
