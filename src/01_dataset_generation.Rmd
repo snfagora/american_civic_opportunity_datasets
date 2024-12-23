@@ -40,7 +40,8 @@ ggplot2::theme_set(custom_theme())
 # Import data 
 
 ```{r}
-# raw organization data from the organizations' IRS tax records and their associated websites 
+# raw organization data from the organizations' IRS tax records and their associated websites (anonymized so it doesn't include any identifying information)
+
 raw_org_df <- vroom(here("raw_data", "raw_org_df.csv"))
 ```
 
