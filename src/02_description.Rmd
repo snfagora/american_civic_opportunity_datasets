@@ -53,7 +53,7 @@ ggplot2::theme_set(custom_theme())
 ## The first datasets 
 
 # 3216 * 27
-cnts_counts_cov <- read_csv(here("data_outputs", "county_counts_cov.csv"))
+cnts_counts_cov <- read_csv(here("data_outputs", "cnty_counts_cov.csv"))
 
 # 28,008 * 27
 zcta_counts_cov <- read_csv(here("data_outputs", "zcta_counts_cov.csv"))

@@ -46,7 +46,7 @@ ggplot2::theme_set(custom_theme())
 
 ```{r}
 # County 
-cnts_counts_cov <- read_csv(here("data_outputs", "county_counts_cov.csv"))
+cnts_counts_cov <- read_csv(here("data_outputs", "cnty_counts_cov.csv"))
 cnts_civic_org_type <- read_csv(here("data_outputs", "cnty_civic_org_type.csv"))
 
 # Zipcode

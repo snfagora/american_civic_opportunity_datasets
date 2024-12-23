@@ -148,11 +148,11 @@ cnts_counts_cov <- cnts_counts_cov %>%
 
 # export CSV
 write_csv(cnts_counts_cov, here("data_outputs", 
-                                "county_counts_cov.csv"))
+                                "cnty_counts_cov.csv"))
 
 # export RDS
 write_rds(cnts_counts_cov, here("data_outputs", 
-                                "county_counts_cov.rds"))
+                                "cnty_counts_cov.rds"))
 ```
 
 ### ZIP code
