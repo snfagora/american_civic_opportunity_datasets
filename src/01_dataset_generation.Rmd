@@ -146,9 +146,13 @@ round(mean(cnts_counts_cov$civic_opp_sum == 0), 2) # 1% of the counties do not h
 cnts_counts_cov <- cnts_counts_cov %>%
   select(-c("HCOST", "CROWD", "AGE65"))
 
-# export
+# export CSV
 write_csv(cnts_counts_cov, here("data_outputs", 
                                 "county_counts_cov.csv"))
+
+# export RDS
+write_rds(cnts_counts_cov, here("data_outputs", 
+                                "county_counts_cov.rds"))
 ```
 
 ### ZIP code
@@ -200,9 +204,13 @@ round(mean(zcta_counts_cov$civic_opp_sum == 0), 2) # 15% of the ZIP codes do not
 zcta_counts_cov <- zcta_counts_cov %>%
   select(-c("HCOST", "CROWD", "AGE65"))
 
-# export
+# export CSV
 write_csv(zcta_counts_cov, here("data_outputs", 
                                 "zcta_counts_cov.csv"))
+
+# export RDS
+write_csv(zcta_counts_cov, here("data_outputs", 
+                                "zcta_counts_cov.rds"))
 ```
 
 ## The second datasets (the civic opportunity kind)
@@ -230,8 +238,9 @@ civic_orgs <- civic_orgs %>%
                             class_vec[15] ~ "Youth"))
 ```
 
+### County
+
 ```{r}
-# County
 cnty_civic_org_type <- civic_orgs %>%
   group_by(fips, class) %>%
   count() %>%
@@ -245,12 +254,16 @@ cnty_civic_org_type <- civic_orgs %>%
 cnty_civic_org_type <- cnty_civic_org_type %>%
   rename(FIPS = fips)
 
+# export CSV
 write_csv(cnty_civic_org_type, here("data_outputs", "cnty_civic_org_type.csv"))
+
+# export RDS
+write_rds(cnty_civic_org_type, here("data_outputs", "cnty_civic_org_type.rds"))
 ```
 
-```{r}
-# ZCTA
+### ZIP code 
 
+```{r}
 zcta_civic_org_type <- civic_orgs %>%
   group_by(ZCTA, class) %>%
   count() %>%
@@ -261,5 +274,9 @@ zcta_civic_org_type <- civic_orgs %>%
   mutate(primary_org_cat = class[which.max(freq)]) %>%
   ungroup()
 
+# export CSV
 write_csv(zcta_civic_org_type, here("data_outputs", "zcta_civic_org_type.csv"))
+
+# export RDS 
+write_rds(zcta_civic_org_type, here("data_outputs", "zcta_civic_org_type.rds"))
 ```
