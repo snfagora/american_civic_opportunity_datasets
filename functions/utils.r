@@ -1,33 +1,34 @@
-
-summary_primary_civic_org <- function(data, var, var_name) {
+# Function to summarize linear regressions
+summary_class_civic_org <- function(data) {
+  variable_labels <- c(
+    POV150 = "Below 150% of the poverty level",
+    SNGPNT = "Single-parent households",
+    BROAD = "No broadband internet",
+    NOHSDP = "No high school diploma",
+    UNEMP = "Unemployment",
+    REMNRTY = "Racial or ethnic minority status"
+  )
   
   data %>%
-    group_by(primary_org_cat) %>%
-    summarize(avg = mean_no_na({{var}}),
-              se = std_no_na({{var}})) %>%
-    mutate(low_ci = avg - 1.96 * se,
-           hi_ci = avg + 1.96 * se) %>%
-    mutate(variable = var_name)
+    pivot_longer(cols = POV150:REMNRTY) %>%
+    group_by(name) %>%
+    do(tidy(lm(re_or_so_freq ~ value, data = .), conf.int = TRUE)) %>%
+    filter(term == "value") %>%
+    mutate(name = variable_labels[as.character(name)])
 }
 
+# Function to normalize a vector
 normalize <- function(x) {
   (x - min(x, na.rm = TRUE)) / (max(x, na.rm = TRUE) - min(x, na.rm = TRUE))
 }
 
+# Function to create county-level prediction plot
 cnty_pred_plot <- function(var, var_name) {
-  
-  # Capture the variable
   var <- enquo(var)
-  
-  # Create the formula
   formula <- as.formula(glue("civic_opp_sum_normalized ~ {quo_name(var)}"))
-  
-  # Create the linear model
   model <- lm(formula, data = cnts_counts_cov)
   
-  # Extract regression coefficient and confidence intervals
   tidy_model <- tidy(model, conf.int = TRUE)
-  
   coeff_info <- tidy_model %>%
     filter(term == quo_name(var)) %>%
     select(estimate, conf.low, conf.high) %>%
@@ -37,15 +38,11 @@ cnty_pred_plot <- function(var, var_name) {
   coeff <- coeff_info[1]
   conf_low <- coeff_info[2]
   conf_high <- coeff_info[3]
-  
-  # Create label for annotation with confidence intervals
   coeff_label <- glue("Coefficient: {round(coeff, 2)} [95% CI: {round(conf_low, 2)}, {round(conf_high, 2)}]")
   
-  # Get the confidence intervals for the prediction
   ci95 <- predict(model, cnts_counts_cov, interval = "confidence", level = 0.95) %>%
-    as.data.frame()  # Columns will already be named fit, lwr, upr
+    as.data.frame()
   
-  # Plot
   cnts_counts_cov %>%
     bind_cols(ci95) %>%
     ggplot(aes(x = !!var, y = civic_opp_sum_normalized)) +
@@ -53,11 +50,8 @@ cnty_pred_plot <- function(var, var_name) {
     geom_line(aes(y = fit, col = "OLS fit")) +
     geom_ribbon(aes(ymin = lwr, ymax = upr, fill = "95% CIs"), alpha = 0.2) +
     annotate(
-      "text", 
-      x = Inf, y = Inf, 
-      label = coeff_label,
-      hjust = 1.1, vjust = 1.1, 
-      size = 4, col = "black"
+      "text", x = Inf, y = Inf, label = coeff_label,
+      hjust = 1.1, vjust = 1.1, size = 4, col = "black"
     ) +
     labs(
       y = "Civic opportunity scores",
@@ -65,28 +59,20 @@ cnty_pred_plot <- function(var, var_name) {
       col = "OLS fit",
       fill = "95% CIs"
     ) +
-    scale_x_continuous(labels = scales::percent) +  # Fixed `label` to `labels`
+    scale_x_continuous(labels = scales::percent) +
     theme_minimal()
 }
 
+# Function to create ZIP-code-level prediction plot
 zcta_pred_plot <- function(var, var_name) {
-  
-  # Add a small constant to avoid log10(0) errors
   zcta_counts_cov <- zcta_counts_cov %>%
     mutate(civic_opp_sum_normalized = civic_opp_sum_normalized + 1)
   
-  # Capture the variable
   var <- enquo(var)
-  
-  # Create the formula
   formula <- as.formula(glue("log10(civic_opp_sum_normalized + 1) ~ {quo_name(var)}"))
-  
-  # Create the linear model
   model <- lm(formula, data = zcta_counts_cov)
   
-  # Extract regression coefficient and confidence intervals
   tidy_model <- tidy(model, conf.int = TRUE)
-  
   coeff_info <- tidy_model %>%
     filter(term == quo_name(var)) %>%
     select(estimate, conf.low, conf.high) %>%
@@ -96,15 +82,11 @@ zcta_pred_plot <- function(var, var_name) {
   coeff <- coeff_info[1]
   conf_low <- coeff_info[2]
   conf_high <- coeff_info[3]
-  
-  # Create label for annotation with confidence intervals
   coeff_label <- glue("Coefficient: {round(coeff, 2)} [95% CI: {round(conf_low, 2)}, {round(conf_high, 2)}]")
   
-  # Get the confidence intervals for the prediction
   ci95 <- predict(model, zcta_counts_cov, interval = "confidence", level = 0.95) %>%
     as.data.frame()
   
-  # Plot (log10 applied to y-axis)
   zcta_counts_cov %>%
     bind_cols(ci95) %>%
     ggplot(aes(x = !!var, y = log10(civic_opp_sum_normalized + 1))) +
@@ -112,11 +94,8 @@ zcta_pred_plot <- function(var, var_name) {
     geom_line(aes(y = fit, col = "OLS fit")) +
     geom_ribbon(aes(ymin = lwr, ymax = upr, fill = "95% CIs"), alpha = 0.2) +
     annotate(
-      "text", 
-      x = Inf, y = Inf, 
-      label = coeff_label,
-      hjust = 1.1, vjust = 1.1, 
-      size = 4, col = "black"
+      "text", x = Inf, y = Inf, label = coeff_label,
+      hjust = 1.1, vjust = 1.1, size = 4, col = "black"
     ) +
     labs(
       y = "Log10(Civic opportunity scores)",
@@ -124,14 +103,15 @@ zcta_pred_plot <- function(var, var_name) {
       col = "OLS fits",
       fill = "95% CIs"
     ) +
-    scale_x_continuous(labels = scales::percent) + 
+    scale_x_continuous(labels = scales::percent) +
     theme_minimal()
 }
 
-mean_no_na <- function(x) mean(x, na.rm = T)
+# Helper functions
+mean_no_na <- function(x) mean(x, na.rm = TRUE)
+std_no_na <- function(x) sd(x, na.rm = TRUE) / sqrt(length(x))
 
-std_no_na <- function(x) sd(x, na.rm = T)/sqrt(length(x))
-
+# Custom theme for plots
 custom_theme <- function(size = 13) {
   theme_bw(base_size = size) +
     theme(
@@ -148,20 +128,19 @@ custom_theme <- function(size = 13) {
     )
 }
 
-# the following function is from here: https://modelsummary.com/vignettes/datasummary.html
-
+# Correlation summary function
 cor_fun <- function(x) {
-  out <- correlation(x) |>
-    summary() |>
-    format(2) |> 
+  out <- correlation(x) %>%
+    summary() %>%
+    format(2) %>%
     as.matrix()
   row.names(out) <- out[, 1]
-  out <- out[, 2:ncol(out)]
+  out <- out[, -1]
   return(out)
 }
 
+# Function to bind county and ZIP-code summaries
 bind_cnty_zcta_summaries <- function(var, var_name) {
-  
   cnts_state_avg_se <- cnts_counts_cov %>%
     group_by(state) %>%
     summarize(avg = mean_no_na({{var}}),
@@ -174,10 +153,7 @@ bind_cnty_zcta_summaries <- function(var, var_name) {
               se = std_no_na({{var}})) %>%
     mutate(unit = "Zipcode")
   
-  binded_out <- bind_rows(cnts_state_avg_se, zcta_state_avg_se) %>%
+  bind_rows(cnts_state_avg_se, zcta_state_avg_se) %>%
     filter(state != "DC") %>%
-    mutate(var = var_name)  # Capture variable name as a string
-  
-  return(binded_out)
-  
+    mutate(var = var_name)
 }
