@@ -217,8 +217,6 @@ write_csv(zcta_counts_cov, here("data_outputs",
 ## The second datasets (the civic opportunity kind)
 
 ```{r}
-class_vec <- c("arts", "civic", "community", "econ", "education", "foundation", "health", "hobby", "housing", "professional", "religious", "research", "socialfraternal", "unions", "youth")
-
 civic_orgs <- civic_orgs %>%
   filter(!is.na(predicted)) %>%
   mutate(class = case_match(predicted,
@@ -254,7 +252,35 @@ cnty_civic_org_type <- civic_orgs %>%
 
 cnty_civic_org_type <- cnty_civic_org_type %>%
   rename(FIPS = fips)
+```
 
+#### Dashboard 
+
+```{r}
+cnty_civic_org_type_dashboard <- civic_orgs %>%
+  group_by(state, fips, class) %>%
+  count() %>%
+  ungroup() %>%
+  group_by(fips) %>%
+  mutate(freq = n/sum(n)) %>%
+  group_by(fips) %>%
+  mutate(primary_org_cat = class[which.max(freq)]) %>%
+  ungroup()
+
+cnty_civic_type_dashboard <- cnty_civic_org_type_dashboard %>%
+  inner_join(sdoh_county_wide %>%
+              select(-StateDesc), 
+            by = c("fips" = "LocationID",
+                   "state" = "StateAbbr")) %>% # n
+  select(state, fips, class, n, freq, primary_org_cat, TotalPopulation) %>%
+  mutate(normalized_n = n/TotalPopulation) %>%
+  select(state, fips, class, n, normalized_n, freq, primary_org_cat, TotalPopulation)
+
+# export CSV
+write_csv(cnty_civic_type_dashboard, here("data_outputs", "cnty_civic_type_dashboard"))
+```
+
+```{r}
 # export CSV
 write_csv(cnty_civic_org_type, here("data_outputs", "cnty_civic_org_type.csv"))
 
