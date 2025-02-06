@@ -217,6 +217,8 @@ write_csv(zcta_counts_cov, here("data_outputs",
 ## The second datasets (the civic opportunity kind)
 
 ```{r}
+class_vec <- c("arts", "civic", "community", "econ", "education", "foundation", "health", "hobby", "housing", "professional", "religious", "research", "socialfraternal", "unions", "youth")
+
 civic_orgs <- civic_orgs %>%
   filter(!is.na(predicted)) %>%
   mutate(class = case_match(predicted,
@@ -277,7 +279,7 @@ cnty_civic_type_dashboard <- cnty_civic_org_type_dashboard %>%
   select(state, fips, class, n, normalized_n, freq, primary_org_cat, TotalPopulation)
 
 # export CSV
-write_csv(cnty_civic_type_dashboard, here("data_outputs", "cnty_civic_type_dashboard"))
+write_csv(cnty_civic_type_dashboard, here("data_outputs", "cnty_civic_type_dashboard.csv"))
 ```
 
 ```{r}
