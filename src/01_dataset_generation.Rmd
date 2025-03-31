@@ -23,7 +23,8 @@ pacman::p_load(
   modelsummary,  # Summarizing model outputs
   tinytable,     # Light tables
   vroom,         # Fast file reading
-  zipcodeR       # ZIP code utilities
+  zipcodeR,       # ZIP code utilities
+  arrow # Apache Parquet
 )
 
 # Load tidylog for transparent logging
@@ -42,8 +43,10 @@ ggplot2::theme_set(custom_theme())
 # Import data 
 
 ```{r}
-# Raw organization data derived from anonymized IRS tax records and associated websites
-ind_org_df <- vroom(here("raw_data", "ind_org_df.csv"))
+# Organization data derived from anonymized IRS tax records and associated websites
+ind_org_df <- arrow::read_parquet(here("raw_data", "ind_org_df.parquet"))
+
+nrow(ind_org_df)
 ```
 
 ```{r}
