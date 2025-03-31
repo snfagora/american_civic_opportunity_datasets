@@ -8,19 +8,19 @@
 
 ## Original datasets 
 
-* [01_dataset_generation.Rmd](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/src/01_dataset_generation.Rmd) produces the following four datasets (row # * column #)
+* [01_dataset_generation.Rmd](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/src/01_dataset_generation.Rmd) produces the following four datasets (row # * column #) and Figure S1.
  
-  * [cnty_counts_cov.csv](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/data_outputs/cnty_counts_cov.csv) (3216 * 27) 
-  * [zcta_counts_cov.csv](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/data_outputs/zcta_counts_cov.csv) (28,008 * 27)
-  * [cnty_civic_org_type.csv](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/data_outputs/cnty_civic_org_type.csv) (30,014 * 5)
-  * [zcta_civic_org_type.csv](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/data_outputs/zcta_civic_org_type.csv) (149,064 * 5)
+  * [cnty_counts_cov.csv](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/data_outputs/cnty_counts_cov.csv) (3.281 * 24) 
+  * [zcta_counts_cov.csv](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/data_outputs/zcta_counts_cov.csv) (30,988 * 24)
+  * [cnty_civic_org_type.csv](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/data_outputs/cnty_civic_org_type.csv) (29,687 * 5)
+  * [zcta_civic_org_type.csv](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/data_outputs/zcta_civic_org_type.csv) (150,162 * 5)
 
-  * [cnty_counts_cov.rds](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/data_outputs/cnty_counts_cov.rds) (3216 * 27)  
-  * [zcta_counts_cov.rds](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/data_outputs/zcta_counts_cov.rds) (28,008 * 27)
-  * [cnty_civic_org_type.rds](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/data_outputs/cnty_civic_org_type.rds) (30,014 * 5)
-  * [zcta_civic_org_type.rds](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/data_outputs/zcta_civic_org_type.rds) (149,064 * 5) 
+  * [cnty_counts_cov.rds](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/data_outputs/cnty_counts_cov.rds) (3,281 * 24)  
+  * [zcta_counts_cov.rds](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/data_outputs/zcta_counts_cov.rds) (30,988 * 24)
+  * [cnty_civic_org_type.rds](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/data_outputs/cnty_civic_org_type.rds) (29,687 * 5)
+  * [zcta_civic_org_type.rds](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/data_outputs/zcta_civic_org_type.rds) (150,162 * 5) 
   
 ## Data description and validation 
 
 * Data description: [02_description.Rmd](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/src/02_description.Rmd) produces Figures 2-3 and tables 4-5
-* Data validation: [03_validation.Rmd](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/src/03_validation.Rmd) produces Figures 4-6
+* Data validation: [03_validation.Rmd](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/src/03_validation.Rmd) produces Figures 4-7

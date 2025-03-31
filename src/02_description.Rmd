@@ -8,41 +8,50 @@ output: html_document
 # Import pkgs 
 
 ```{r}
+# Load or install `pacman` package for managing other packages
 if (!require(pacman)) install.packages("pacman")
 
+# Load required packages using pacman::p_load
 pacman::p_load(
-  broom, 
-  tidyverse,
-  glue,
-  here,
-  purrr,
-  estimatr,
-  effectsize,
-  sandwich,
-  ggrepel,
-  patchwork,
-  ggpubr, 
-  corrplot,
-  corrr,
-  correlation, 
-  callr,
-  modelsummary,
-  confintr, 
-  tinytable, 
-  sf,
-  statebins,
-  RColorBrewer
+  # broom,         # Convert model outputs to tidy tibbles
+  boot,            # Bootstrapping
+  tidyverse,       # Core data science packages (ggplot2, dplyr, etc.)
+  glue,            # String interpolation
+  here,            # File paths relative to project root
+  # purrr,         # Functional programming tools
+  # estimatr,      # Robust linear regression and related estimators
+  # effectsize,    # Calculate and interpret effect sizes
+  # sandwich,      # Robust standard errors for model objects
+  # ggrepel,       # Improved text label placement in ggplot2
+  patchwork,       # Combine ggplots into multi-panel layouts
+  # ggpubr,        # Publication-ready ggplot enhancements
+  # corrplot,      # Visualize correlation matrices
+  # corrr,         # Tidy correlation workflows
+  # correlation,   # Bayesian and frequentist correlation testing
+  # callr,         # Run R code in a separate R session
+  modelsummary,    # Beautiful tables for regression results
+  # confintr,      # Confidence intervals for statistical measures
+  tinytable,       # Lightweight table creation for reports
+  # sf,            # Simple features for spatial data
+  statebins,       # Tile grid maps of the U.S.
+  # RColorBrewer,  # Color palettes
+  arrow            # For reading/writing Apache Parquet files
 )
 
+# Load tidylog to get informative messages from dplyr workflows
 library("tidylog", warn.conflicts = FALSE)
 
+# Install and load stdidx (standardized indices) from GitHub
 devtools::install_github("graemeblair/stdidx")
 library(stdidx)
 
-options(es.use_symbols = TRUE) # get nice symbols
+# Option to display effect size symbols (e.g., ∂, β)
+options(es.use_symbols = TRUE)
 
+# Source custom utility functions
 source(here("functions", "utils.r"))
 
+# Set default ggplot2 theme globally
 ggplot2::theme_set(custom_theme())
 ```
 

@@ -21,9 +21,8 @@ pacman::p_load(
   here,          # Relative file paths
   patchwork,     # Combine ggplots
   modelsummary,  # Summarizing model outputs
-  tinytable,     # Light tables
-  vroom,         # Fast file reading
-  zipcodeR,       # ZIP code utilities
+  #tinytable,     # Light tables
+  #zipcodeR,       # ZIP code utilities
   arrow # Apache Parquet
 )
 
@@ -47,6 +46,8 @@ ggplot2::theme_set(custom_theme())
 ind_org_df <- arrow::read_parquet(here("raw_data", "ind_org_df.parquet"))
 
 nrow(ind_org_df)
+
+names(ind_org_df)
 ```
 
 ```{r}

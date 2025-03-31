@@ -11,23 +11,28 @@ output: html_document
 if (!require(pacman)) install.packages("pacman")
 
 pacman::p_load(
-  broom, 
-  tidyverse,
-  glue,
-  here,
-  purrr,
-  estimatr,
-  effectsize,
-  sandwich,
-  ggrepel,
-  patchwork,
-  ggpubr, 
-  corrplot,
-  corrr,
-  correlation, 
-  modelsummary,
-  confintr, 
-  tinytable
+  boot,          # For bootstrapping
+  paralle,       # For parallel processing
+  scales,        # For labels
+  arrow,          # For reading the Parquet file
+  broom,        # Convert model outputs to tidy tibbles
+  tidyverse,      # Core data science tools: dplyr, ggplot2, etc. 
+  glue,           # String interpolation 
+  here,           # For reproducible file paths 
+  purrr,          # Functional programming 
+  estimatr,       # Robust regression 
+  # effectsize,   # Effect size computation 
+  sandwich,       # Robust standard errors 
+  # ggrepel,      # Improved label placement in ggplot2 
+  patchwork,      # Combine multiple ggplots 
+  # ggpubr,       # Publication-ready plots 
+  # corrplot,     # Correlation matrix plots
+  # corrr,        # Tidy correlation workflows 
+  correlation,  # Bayesian/frequentist correlation tests 
+  modelsummary,   # Summarizing model outputs
+  confintr,       # Confidence intervals 
+  tinytable,     # Lightweight table formatting 
+  binom          # For Wilson 95% CIs in get_predicted_percent_ci()
 )
 
 library("tidylog", warn.conflicts = FALSE)
@@ -45,6 +50,9 @@ ggplot2::theme_set(custom_theme())
 # Import data 
 
 ```{r}
+# Inidivdual org level data 
+org_df <- arrow::read_parquet(here("raw_data", "ind_org_df.parquet"))
+
 # County 
 cnts_counts_cov <- read_csv(here("data_outputs", "cnty_counts_cov.csv"))
 cnts_civic_org_type <- read_csv(here("data_outputs", "cnty_civic_org_type.csv"))
@@ -86,6 +94,93 @@ zcta_counts_cov <- zcta_counts_cov %>%
 
 # Validation
 
+## The org level data
+
+```{r}
+summary_df_long <- org_df %>%
+  mutate(
+    civic_score = ifelse(
+      (is.na(volunteer) & is.na(membership) & is.na(take_action) & is.na(events)) |
+      (rowSums(across(c(volunteer, membership, take_action, events)), na.rm = TRUE) == 0),
+      NA,
+      idx_mean(volunteer, membership, take_action, events)
+    ),
+    civic_score_group = case_when(
+      is.na(civic_score)        ~ "No Civic Score", 
+      civic_score < 0.5         ~ "Low Civic Score",
+      civic_score >= 0.5        ~ "Median or High Civic Score"
+    ),
+    civic_score_group = factor(civic_score_group, levels = c(
+      "No Civic Score", "Low Civic Score", "Median or High Civic Score"
+    ))
+  ) %>%
+  group_by(civic_score_group) %>%
+  summarize(
+    asset   = list(bootstrap_median_ci(asset_amt)),
+    income  = list(bootstrap_median_ci(income_amt)),
+    revenue = list(bootstrap_median_ci(revenue_amt)),
+    .groups = "drop"
+  ) %>%
+  pivot_longer(
+    cols = c(asset, income, revenue),
+    names_to = "metric",
+    values_to = "boot_result"
+  ) %>%
+  unnest_wider(boot_result, names_sep = "_")  # yields boot_result_median, _ci_low, _ci_high
+
+unique(summary_df_long$civic_score_group) # should be three groups 
+```
+
+### Figure 4
+
+```{r}
+summary_df_long <- summary_df_long %>%
+  mutate(metric = str_to_title(metric))  # Capitalize: "Asset", "Income", "Revenue")
+```
+
+```{r}
+# Open PNG graphics device (base R)
+png(filename = here::here("plots", "figure4.png"), width = 1200, height = 900, res = 120)
+
+# Plot
+ggplot(summary_df_long, aes(x = factor(civic_score_group), y = boot_result_median, group = metric)) +
+  geom_col(aes(fill = metric), position = position_dodge(width = 0.8), width = 0.7, alpha = 0.7) +
+  geom_errorbar(
+    aes(ymin = boot_result_ci_low, ymax = boot_result_ci_high, color = metric),
+    width = 0.3,
+    linewidth = 1.5,  # Make thicker
+    position = position_dodge(width = 0.8)
+  ) +
+  geom_point(
+    aes(color = metric),
+    position = position_dodge(width = 0.8),
+    size = 2
+  ) +
+  geom_text(
+    aes(label = scales::label_dollar()(boot_result_median)),  # No scale or suffix
+    position = position_dodge(width = 0.8),
+    vjust = -0.5,
+    size = 4
+  ) +
+  labs(
+    x = "Civic opportunity score",
+    y = "Median amount (excluding NAs and 0s)",
+    fill = "Financial Metric",
+    color = "Financial Metric",
+    title = "Median Asset, Income, and Revenue by Civic Opportunity Score",
+    subtitle = "95% confidence intervals are created by bootstrapping"
+  ) +
+  scale_y_continuous(
+    labels = scales::label_dollar(),  # Full dollar format, e.g., $125,000
+    expand = expansion(mult = c(0, 0.1))
+  ) +
+  theme_minimal(base_size = 14) +
+  guides(color = guide_legend(override.aes = list(fill = NA)))  # Combine color & fill legends
+
+# Close PNG device
+dev.off()
+```
+
 ## The first dataset (degree)
 
 "POV150" = "Persons living below 150% of the poverty level"
@@ -97,7 +192,7 @@ zcta_counts_cov <- zcta_counts_cov %>%
 
 ### County 
 
-#### Figure 4
+#### Figure 5
 
 ```{r}
 wrap_plots(
@@ -112,12 +207,12 @@ wrap_plots(
   plot_annotation(tag_levels = "a", title = "Unit: County") +
   plot_layout(guides = "collect")
 
-ggsave(here("plots", "figure4.png"), width = 14, height = 12)
+ggsave(here("plots", "figure5.png"), width = 14, height = 12)
 ```
 
 ### ZIP code 
 
-#### Figure 5
+#### Figure 6
 
 ```{r}
 wrap_plots(
@@ -132,7 +227,7 @@ wrap_plots(
   plot_annotation(tag_levels = "a", title = "Unit: ZIP code") +
   plot_layout(guides = "collect")
 
-ggsave(here("plots", "figure5.png"), width = 14, height = 12)
+ggsave(here("plots", "figure6.png"), width = 14, height = 12)
 ```
 
 ## The second dataset (kind)
@@ -218,7 +313,7 @@ binded_sums <- bind_rows(sum_cnts_civic_org_type %>%
             mutate(unit = "ZIP code"))
 ```
 
-### Figure 6 
+### Figure 7
 
 ```{r}
 binded_sums %>%
@@ -234,5 +329,5 @@ binded_sums %>%
   geom_hline(yintercept = 0, col = "red", linetype = 2) +
   facet_wrap(~unit)
 
-ggsave(here("plots", "figure6.png"), width = 10)
+ggsave(here("plots", "figure7.png"), width = 10)
 ```

@@ -177,3 +177,27 @@ get_predicted_percent_ci <- function(df, label) {
       group = label
     )
 }
+
+# Function to bootstrap median and compute 95% CI
+bootstrap_median_ci <- function(x, R = 1000) {
+  x <- x[x > 0 & !is.na(x)]
+  if (length(x) < 2) return(c(NA, NA, NA))
+  
+  # Use all available cores minus one
+  n_cores <- max(1, parallel::detectCores() - 1)
+  
+  boot_out <- boot(
+    data = x,
+    statistic = function(data, i) median(data[i]),
+    R = R,
+    parallel = "multicore",
+    ncpus = n_cores
+  )
+  
+  ci <- tryCatch(
+    boot.ci(boot_out, type = "perc")$percent[4:5],
+    error = function(e) c(NA, NA)
+  )
+  
+  c(median = median(x), ci_low = ci[1], ci_high = ci[2])
+}
