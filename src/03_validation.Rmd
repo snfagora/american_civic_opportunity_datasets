@@ -97,6 +97,32 @@ zcta_counts_cov <- zcta_counts_cov %>%
 ## The org level data
 
 ```{r}
+org_df %>%
+  mutate(
+    civic_score = ifelse(
+      (is.na(volunteer) & is.na(membership) & is.na(take_action) & is.na(events)) |
+      (rowSums(across(c(volunteer, membership, take_action, events)), na.rm = TRUE) == 0),
+      NA,
+      idx_mean(volunteer, membership, take_action, events)
+    ),
+    civic_score_group = case_when(
+      is.na(civic_score)        ~ "No Civic Score", 
+      civic_score < 0.5         ~ "Low Civic Score",
+      civic_score >= 0.5        ~ "Median or High Civic Score"
+    ),
+    civic_score_group = factor(civic_score_group, levels = c(
+      "No Civic Score", "Low Civic Score", "Median or High Civic Score"
+    ))
+  ) %>%
+  filter(!is.na(predicted)) %>%
+  group_by(civic_score_group, predicted) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  group_by(civic_score_group) %>%
+  mutate(fraction = n / sum(n)) %>%
+  filter(predicted == "foundation")
+```
+
+```{r}
 summary_df_long <- org_df %>%
   mutate(
     civic_score = ifelse(
