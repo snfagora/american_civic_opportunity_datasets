@@ -49,23 +49,49 @@ ggplot2::theme_set(custom_theme())
 # Import data 
 
 ```{r}
+## The first datasets (degree of civic opportunity)
 
-## The first datasets 
-
-# 3216 * 27
+# County-level summary: 3,281 counties × 23 variables
 cnts_counts_cov <- read_csv(here("data_outputs", "cnty_counts_cov.csv"))
 
-# 28,008 * 27
+dim(cnts_counts_cov)
+
+# ZIP-level summary: 30,988 ZIP codes × 23 variables
 zcta_counts_cov <- read_csv(here("data_outputs", "zcta_counts_cov.csv"))
 
-## The second datasets
+dim(zcta_counts_cov)
+```
 
-# 30,014 * 5
+```{r}
+## The second datasets (type of civic opportunity)
+
+# County-level type classification: 29,687 rows × 5 columns
 cnty_civic_org_type <- read_csv(here("data_outputs", "cnty_civic_org_type.csv"))
 
-# 149,064 * 5
+dim(cnty_civic_org_type)
+
+# ZIP-level type classification: 150,162 rows × 5 columns
 zcta_civic_org_type <- read_csv(here("data_outputs", "zcta_civic_org_type.csv"))
 
+dim(zcta_civic_org_type)
+```
+
+```{r}
+length(unique(cnty_civic_org_type$FIPS)) #3,051
+
+cnty_civic_org_type %>%
+  select(FIPS, primary_org_cat) %>%
+  distinct() %>%
+  mutate(so_or_re = ifelse(str_detect(primary_org_cat, "Social|Reli"), 1, 0)) %>%
+  summarize(so_or_re_pct = mean(so_or_re, na.rm = T)) #79%
+
+length(unique(zcta_civic_org_type$ZCTA)) #22,863
+
+zcta_civic_org_type %>%
+  select(ZCTA, primary_org_cat) %>%
+  distinct() %>%
+  mutate(so_or_re = ifelse(str_detect(primary_org_cat, "Social|Reli"), 1, 0)) %>%
+  summarize(so_or_re_pct = mean(so_or_re, na.rm = T)) #60%
 ```
 
 # Description
@@ -104,42 +130,73 @@ datasummary(civic_org_sum_normalized +
 ### Figure 2
 
 ```{r}
+# Bind summarized data
 binded_out <- bind_cnty_zcta_summaries(civic_opp_index, "Civic opportunity")
 
+# Vector of 50 U.S. state abbreviations (excluding DC and territories)
+state_abb_50 <- state.abb
+
+# Filter to include only the 50 states
+binded_out <- binded_out %>%
+  filter(state %in% state_abb_50)
+
+# Bar plot with error bars
 bar_plot <- binded_out %>%
-  ggplot(aes(x = fct_reorder(state, avg), y = avg, ymax = avg + 1.96*se, ymin = avg - 1.96*se, fill = unit)) +
-  geom_col(position = position_dodge()) +
-  geom_errorbar(position = position_dodge2()) +
+  mutate(state = factor(state)) %>%
+  ggplot(aes(
+    x = fct_reorder(state, avg),
+    y = avg,
+    fill = unit
+  )) +
+  geom_col(position = position_dodge(width = 0.9)) +
+  geom_errorbar(aes(ymin = avg - 1.96 * se, ymax = avg + 1.96 * se),
+                width = 0.3,
+                position = position_dodge(width = 0.9)) +
   coord_flip() +
   labs(
     x = "",
     y = "Average civic opportunity index",
-    fill = "Unit")
+    fill = "Unit"
+  )
 
+# Statebins plot
 statebin_plot <- binded_out %>%
   ggplot(aes(state = state, fill = avg)) +
   geom_statebins() +
   facet_wrap(~unit) +
   theme_statebins() +
-  theme(plot.title=element_text(size=16, hjust=0)) +
-  theme(plot.margin = margin(30,30,30,30)) +
+  theme(
+    plot.title = element_text(size = 16, hjust = 0),
+    plot.margin = margin(30, 30, 30, 30)
+  ) +
   labs(fill = "Average civic opportunity index")
 
-bar_plot + statebin_plot + plot_annotation(tag_levels = "a")
+# Combine plots
+combined_plot <- bar_plot + statebin_plot + plot_annotation(tag_levels = "a")
 
-ggsave(here("plots", "figure2.png"), width = 15, height = 10)
+combined_plot
+
+# Save to file
+ggsave(
+  filename = here("plots", "figure2.png"),
+  plot = combined_plot,
+  width = 15,
+  height = 10
+)
 ```
 
 ## The second datasets 
 
 ```{r}
-length(unique(cnty_civic_org_type$FIPS)) # n = 3,118
+length(unique(cnty_civic_org_type$FIPS)) # n = 3,124
+length(unique(zcta_civic_org_type$ZCTA)) # n = 25,635
+```
 
-length(unique(zcta_civic_org_type$ZCTA)) # n = 25,497
-
+```{r}
 sd_binded_out <- bind_rows(
 
   cnty_civic_org_type %>%
+    filter(!is.na(primary_org_cat)) %>%
     select(FIPS, primary_org_cat) %>%
     distinct() %>%
     group_by(primary_org_cat) %>%
@@ -149,6 +206,7 @@ sd_binded_out <- bind_rows(
     mutate(unit = "County"),
 
   zcta_civic_org_type %>%
+    filter(!is.na(primary_org_cat)) %>%
     select(ZCTA, primary_org_cat) %>%
     distinct() %>%
     group_by(primary_org_cat) %>%

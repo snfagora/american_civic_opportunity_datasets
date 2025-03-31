@@ -157,3 +157,23 @@ bind_cnty_zcta_summaries <- function(var, var_name) {
     filter(state != "DC") %>%
     mutate(var = var_name)
 }
+
+# Function to compute percent + 95% CI from a dataframe
+get_predicted_percent_ci <- function(df, label) {
+  df %>%
+    filter(!is.na(predicted)) %>%
+    count(predicted) %>%
+    mutate(total = sum(n)) %>%
+    rowwise() %>%
+    mutate(ci = list(binom.confint(x = n, n = total, method = "wilson"))) %>%
+    ungroup() %>%
+    unnest_wider(ci, names_sep = "_") %>%
+    transmute(
+      predicted,
+      count = n,
+      percent = round(ci_mean * 100, 2),
+      lower_percent = round(ci_lower * 100, 2),
+      upper_percent = round(ci_upper * 100, 2),
+      group = label
+    )
+}
