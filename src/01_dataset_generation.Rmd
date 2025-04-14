@@ -23,7 +23,8 @@ pacman::p_load(
   modelsummary,  # Summarizing model outputs
   #tinytable,     # Light tables
   #zipcodeR,       # ZIP code utilities
-  arrow # Apache Parquet
+  arrow, # Apache Parquet
+  DiagrammeR # Diagramme
 )
 
 # Load tidylog for transparent logging
@@ -39,6 +40,77 @@ source(here("functions", "utils.r"))
 ggplot2::theme_set(custom_theme())
 ```
 
+# Create a diagramme 
+
+```{r}
+DiagrammeR::grViz("
+digraph civic_pipeline {
+
+  graph [rankdir = TB, layout = dot]
+
+  node [shape = box, style = filled, fontname = Helvetica, fontsize = 12]
+
+  // Raw Data Sources
+  IRS       [label = 'IRS Master Business File', fillcolor = lightblue]
+  filings   [label = 'Digitized 990 Filings', fillcolor = lightblue]
+  urls      [label = 'Organizational URLs', fillcolor = lightblue]
+  about     [label = 'Organizational About Pages', fillcolor = lightblue]
+
+  // Data Extraction
+  search      [label = 'Find URLs via Bing Search API', fillcolor = white]
+  scrape      [label = 'Extract Website Texts', fillcolor = white]
+  extractXML  [label = 'Extract XMLs', fillcolor = white]
+  extractGeo  [label = 'Extract Geolocations', fillcolor = white]
+
+  // Derived Datasets
+  corpus    [label = 'Descriptive Text Corpus', fillcolor = palegreen]
+  geolocate [label = 'Geolocations', fillcolor = palegreen]
+  activities [label = 'Organizational Activities', fillcolor = palegreen]
+
+  // Data Transformation
+  nlp       [label = 'Rule-based Classification (NLP)', fillcolor = gainsboro]
+  ml        [label = 'Supervised Classification (ML)', fillcolor = gainsboro]
+
+  // Final Datasets
+  classification [label = 'Organizational Classification', fillcolor = khaki]
+  dataset   [label = 'Civic Opportunity Datasets', fillcolor = khaki]
+
+  // Edges
+  IRS -> filings
+  IRS -> search
+  search -> urls
+  urls -> about
+  about -> scrape
+  scrape -> corpus
+  filings -> extractXML
+  extractXML -> corpus
+  urls -> extractGeo
+  extractGeo -> geolocate
+  IRS -> extractGeo
+  corpus -> nlp
+  corpus -> ml
+  nlp -> activities
+  ml -> classification
+  activities -> dataset
+  geolocate -> dataset
+  geolocate -> classification
+
+  // Legend
+  subgraph cluster_legend {
+    label = 'Type'
+    fontsize = 12
+    style = dashed
+    color = gray
+
+    key1 [label = 'Raw Data Sources', fillcolor = lightblue, style = filled, shape = box]
+    key2 [label = 'Derived Datasets', fillcolor = palegreen, style = filled, shape = box]
+    key3 [label = 'Final Datasets', fillcolor = khaki, style = filled, shape = box]
+    key4 [label = 'Data Extraction', fillcolor = white, style = filled, shape = box]
+    key5 [label = 'Data Transformation', fillcolor = gainsboro, style = filled, shape = box]
+  }
+}
+")
+```
 # Import data 
 
 ```{r}
@@ -51,7 +123,7 @@ names(ind_org_df)
 ```
 
 ```{r}
-# SDOH (2017???2021 ACS adapted by CDC)
+# SDOH (2017–2021 ACS adapted by CDC)
 
 # County-level
 sdoh_county <- read_csv(here("raw_data", "sdoh_county.csv")) %>%
@@ -149,7 +221,7 @@ civic_orgs <- ind_org_df %>%
   filter(opp_binary == 1)
 ```
 
-## The first datasets (what organizations do)
+## The second datasets (what organizations do)
 
 ### County 
 
@@ -269,7 +341,7 @@ write_csv(zcta_counts_cov %>% select(-Geolocation), here("data_outputs", "zcta_c
 write_csv(zcta_counts_cov %>% select(-Geolocation), here("data_outputs", "zcta_counts_cov.rds"))
 ```
 
-## The second datasets (what organizations are)
+## The third datasets (what organizations are)
 
 ```{r}
 class_vec <- c("arts", "civic", "community", "econ", "education", "foundation",
