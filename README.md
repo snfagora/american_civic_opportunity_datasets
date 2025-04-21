@@ -48,18 +48,16 @@ To protect privacy and reduce the risk of misinterpretation, all identifying inf
 
 **File Access and Format Differences:**
 
-| Format   | File Size | Available At                                                              |
-|----------|-----------|---------------------------------------------------------------------------|
+| Format     | File Size | Available At                                                                 |
+|------------|-----------|------------------------------------------------------------------------------|
 | `.parquet` | 31.7 MB   | [GitHub](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/raw_data/ind_org_df.parquet) and [Harvard Dataverse](https://doi.org/10.7910/DVN/IRCA7C) |
 | `.csv`     | 105.4 MB  | [Harvard Dataverse](https://doi.org/10.7910/DVN/IRCA7C) only (not hosted on GitHub due to file size limits) |
-
-The `.parquet` file is compressed, columnar, and efficient for large-scale analysis. The `.csv` version is more accessible and human-readable, though significantly larger in size.
 
 ---
 
 ### Dataset 2: ZIP Code– and County–Level Aggregated Civic Opportunity Counts
 
-Derived from Dataset 1, this dataset aggregates civic opportunity indicators and community characteristics for approximately 31,000 ZIP codes and 3,200 counties. Each row represents a ZIP Code Tabulation Area (ZCTA) or county and includes:
+Derived from Dataset 1, this dataset aggregates civic opportunity indicators and community characteristics for ZIP Code Tabulation Areas (ZCTAs) and counties. Each row represents a ZIP code or county and includes:
 
 - Organizational counts:
   - `n`: total nonprofit organizations
@@ -76,6 +74,10 @@ Derived from Dataset 1, this dataset aggregates civic opportunity indicators and
   - `NOHSDP`: no high school diploma
   - `UNEMP`: unemployment rate
   - `REMNRTY`: share of racial or ethnic minority residents
+
+**Dimensions:**
+- ZIP code level: 30,988 rows × 24 columns  
+- County level: 3,281 rows × 24 columns
 
 **ZIP Code Level Files:**
 - [`zcta_counts_cov.csv`](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/data_outputs/zcta_counts_cov.csv)  
@@ -97,7 +99,9 @@ Also derived from Dataset 1, this dataset summarizes the types of organizations 
 - Relative frequency: `freq` (share of total civic orgs that fall into that class)
 - Primary provider type: `primary_org_cat` (most common type in that geography)
 
-These datasets enable comparative analysis of which types of organizations dominate civic life in different regions.
+**Dimensions:**
+- ZIP code level: 150,162 rows × 5 columns  
+- County level: 29,687 rows × 5 columns
 
 **ZIP Code Level Files:**
 - [`zcta_civic_org_type.csv`](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/data_outputs/zcta_civic_org_type.csv)  
