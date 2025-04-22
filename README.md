@@ -8,9 +8,9 @@ This repository contains datasets and source files used to produce the MapAgora 
 
 ## Session Information
 
-- R version: 4.4.0 (2024-04-24)  
-- Platform: aarch64-apple-darwin20  
-- OS: macOS 15.1.1  
+- R version 4.4.0 (2024-04-24)
+- Platform: aarch64-apple-darwin20
+- Running under: macOS 15.3.2
 
 ---
 
