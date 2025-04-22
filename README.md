@@ -59,7 +59,7 @@ Each observation includes:
 
 ---
 
-### Dataset 2: ZIP Code??? and County???Level Aggregated Civic Opportunity Counts
+### Dataset 2: ZIP Code- and County-Level Aggregated Civic Opportunity Counts
 
 Derived from Dataset 1, this dataset aggregates civic opportunity indicators and socioeconomic characteristics at the ZIP code (ZCTA) and county levels. Each observation corresponds to a geographic unit and includes counts of civic opportunity types, a composite index, normalized indicators, and contextual variables from the American Community Survey (ACS).
 
@@ -99,9 +99,9 @@ Each observation includes:
 
 ---
 
-### Dataset 3: ZIP Code??? and County???Level Civic Opportunity Provider Types
+### Dataset 3: ZIP Code- and County-Level Civic Opportunity Provider Types
 
-Also derived from Dataset 1, this dataset summarizes the types of organizations that provide civic opportunities at the ZIP code and county levels. Each observation corresponds to a unique geography???organization type pair and enables analysis of regional patterns in the composition of civic infrastructure.
+Also derived from Dataset 1, this dataset summarizes the types of organizations that provide civic opportunities at the ZIP code and county levels. Each observation corresponds to a unique geography-organization type pair and enables analysis of regional patterns in the composition of civic infrastructure.
 
 Each observation includes:
 
@@ -130,7 +130,7 @@ Each observation includes:
 ## Data Description and Validation
 
 - **Data description:** [`02_description.Rmd`](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/src/02_description.Rmd)  
-  - Produces Figures 2???3 and Tables 4???5  
+  - Produces Figures 2-3 and Tables 4-5  
 
 - **Data validation:** [`03_validation.Rmd`](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/src/03_validation.Rmd)  
-  - Produces Figures 4???7
+  - Produces Figures 4-7
