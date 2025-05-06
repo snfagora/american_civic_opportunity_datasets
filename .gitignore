@@ -2,3 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
+
+# Skip these large files
+raw_data/ind_org_df.rds
+raw_data/ind_org_df.csv
