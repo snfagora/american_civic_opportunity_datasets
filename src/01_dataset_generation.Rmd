@@ -5,50 +5,51 @@ date: "`r Sys.Date()`"
 output: html_document
 ---
 
-# Load packages
+# Load required packages and custom settings
 
 ```{r}
 # Check if 'pacman' is installed; if not, install it
+# 'pacman' helps manage and load R packages efficiently
 if (!require(pacman)) {
   install.packages("pacman")
 }
 
 # Load required packages using pacman
 pacman::p_load(
-  tidyverse, # Data wrangling and visualization
-  binom, # Binomial confidence intervals
-  glue, # String interpolation
-  here, # Relative file paths
-  patchwork, # Combine ggplots
+  vroom,        # Fast data import
+  tidyverse,    # Data wrangling and visualization
+  binom,        # Binomial confidence intervals
+  glue,         # String interpolation
+  here,         # Relative file paths
+  patchwork,    # Combine ggplots
   modelsummary, # Summarizing model outputs
-  # tinytable,     # Light tables
-  # zipcodeR,       # ZIP code utilities
-  arrow, # Apache Parquet
-  DiagrammeR, # Diagramme
-  DiagrammeRsvg,
-  rsvg
+  arrow,        # Apache Parquet support
+  DiagrammeR,   # Diagram creation and visualization
+  DiagrammeRsvg, # SVG export for diagrams
+  rsvg          # Convert SVG to other formats
 )
 
-# Load tidylog for transparent logging
+# Load tidylog for logging data manipulation transparently
 library("tidylog", warn.conflicts = FALSE)
 
-# Load GitHub package
+# Load a GitHub package for additional functionality
 devtools::install_github("graemeblair/stdidx")
 library(stdidx)
 
-# Plotting settings
+# Set plotting options and load custom theme settings
 options(es.use_symbols = TRUE)
-source(here("functions", "utils.r"))
-ggplot2::theme_set(custom_theme())
+source(here("functions", "utils.r")) # Load utility functions
+ggplot2::theme_set(custom_theme())   # Apply custom theme
 ```
 
-# Create a diagramme
+# Create a diagram to visualize data pipeline
 
 ```{r}
 ################################################################################
 # FIGURE 1
 ################################################################################
 
+# Define a data pipeline using DiagrammeR
 graph <- grViz("
 digraph civic_pipeline {
   graph [rankdir = TB, layout = dot]
@@ -124,44 +125,57 @@ digraph civic_pipeline {
 }
 ")
 
-# Convert to SVG, then to PNG
-svg <- export_svg(graph)
-charToRaw(svg) %>% rsvg_png(here("plots", "figure1.png"))
+# Convert diagram to SVG and PNG formats for publication
+svg <- export_svg(graph) # Export as SVG
+charToRaw(svg) %>% rsvg_png(here("plots", "figure1.png")) # Convert to PNG
 ```
 
-# Import data 
+# Load and preprocess data
 
 ```{r}
-# Organization data derived from anonymized IRS tax records and associated websites
-ind_org_df <- arrow::read_parquet(here("raw_data", "ind_org_df.parquet"))
+# Load organizational data from raw IRS tax records and websites
+ind_org_df <- vroom::vroom(here("raw_data", "ind_org_df.csv")) 
 
+# Export the file to parquet   
+arrow::write_parquet(ind_org_df, here("raw_data", "ind_org_df.parquet"))
+
+# Export the file to RDS 
+readr::write_rds(ind_org_df, here("raw_data", "ind_org_df.rds"))
+
+# Display the number of organizations in the dataset
 nrow(ind_org_df)
 
+# Show the column names of the dataset
 names(ind_org_df)
 ```
 
 ```{r}
-# SDOH (2017-2021 ACS adapted by CDC)
+# Load SDOH (Social Determinants of Health) data from CDC, aggregated by county and ZIP code
 
-# County-level
+# County-level data
 sdoh_county <- read_csv(here("raw_data", "sdoh_county.csv")) %>%
   select(StateAbbr, StateDesc, LocationID, MeasureID, Data_Value, TotalPopulation, Geolocation)
 
+# Reshape county data from long to wide format
 sdoh_county_wide <- sdoh_county %>%
   pivot_wider(names_from = MeasureID, values_from = Data_Value)
 
-# ZIP code-level
+# ZIP code-level data
 sdoh_zcta <- read_csv(here("raw_data", "sdoh_zcta.csv")) %>%
   select(LocationID, MeasureID, Data_Value, TotalPopulation, Geolocation)
 
+# Reshape ZIP code data from long to wide format
 sdoh_zcta_wide <- sdoh_zcta %>%
   pivot_wider(names_from = MeasureID, values_from = Data_Value)
 ```
 
-# Transform data 
+# Perform data transformations
 
 ```{r}
-nrow(ind_org_df) # ~1.8M organizations
+# Display the size of the dataset
+nrow(ind_org_df) # ~1.3M organizations
+
+# Check the proportion of organizations using P.O. boxes
 mean(ind_org_df$is_po) # ~23% use P.O. boxes
 ```
 
