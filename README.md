@@ -28,12 +28,11 @@ Datasets 2 and 3 are derived from Dataset 1 using [`01_dataset_generation.Rmd`](
 
 ### Dataset 1: Organization-Level Dataset (De-identified)
 
-This dataset includes 1,363,701 de-identified nonprofit organizations. While the IRS Master Business File contains over 1.8 million registered tax-exempt organizations, this dataset includes only those for which we could reliably extract sufficient information to classify both the types of civic opportunities offered and the organizational type. This filtering step ensures high-quality coverage and consistent labeling.
-
-To protect privacy and reduce the risk of misinterpretation, all identifying information (e.g., organization names and EINs) is removed.
+This dataset includes 1,774,798 de-identified nonprofit organizations. To protect privacy and reduce the risk of misinterpretation, all identifying information (e.g., organization names and EINs) is removed.
 
 Each observation includes:
 
+- Unique identifier: `id`: sequetial row number 
 - Geographic identifiers:
   - `state`, `city`, `FIPS` (county), `ZCTA` (ZIP Code Tabulation Area)
 - Civic opportunity indicators:
@@ -48,14 +47,14 @@ Each observation includes:
 - Financial attributes:
   - `asset_amt`, `income_amt`, `revenue_amt`: financial indicators from IRS filings
 
-**Dimensions:** 1,363,701 rows $\times$ 17 columns
+**Dimensions:** 1,774,798 rows $\times$ 17 columns
 
 **File Access and Format Differences:**
 
 | Format     | File Size | Available At                                                                 |
 |------------|-----------|------------------------------------------------------------------------------|
 | `.parquet` | 31.7 MB   | [GitHub](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/raw_data/ind_org_df.parquet) and [Harvard Dataverse](https://doi.org/10.7910/DVN/IRCA7C) |
-| `.csv`     | 105.4 MB  | [Harvard Dataverse](https://doi.org/10.7910/DVN/IRCA7C) only (not hosted on GitHub due to file size limits) |
+| `.csv`     | 125.4 MB  | [Harvard Dataverse](https://doi.org/10.7910/DVN/IRCA7C) only (not hosted on GitHub due to file size limits) |
 
 ---
 
