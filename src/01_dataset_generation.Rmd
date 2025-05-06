@@ -15,17 +15,17 @@ if (!require(pacman)) {
 
 # Load required packages using pacman
 pacman::p_load(
-  tidyverse,     # Data wrangling and visualization
-  binom,         # Binomial confidence intervals
-  glue,          # String interpolation
-  here,          # Relative file paths
-  patchwork,     # Combine ggplots
-  modelsummary,  # Summarizing model outputs
-  #tinytable,     # Light tables
-  #zipcodeR,       # ZIP code utilities
+  tidyverse, # Data wrangling and visualization
+  binom, # Binomial confidence intervals
+  glue, # String interpolation
+  here, # Relative file paths
+  patchwork, # Combine ggplots
+  modelsummary, # Summarizing model outputs
+  # tinytable,     # Light tables
+  # zipcodeR,       # ZIP code utilities
   arrow, # Apache Parquet
   DiagrammeR, # Diagramme
-  DiagrammeRsvg, 
+  DiagrammeRsvg,
   rsvg
 )
 
@@ -42,9 +42,13 @@ source(here("functions", "utils.r"))
 ggplot2::theme_set(custom_theme())
 ```
 
-# Create a diagramme 
+# Create a diagramme
 
 ```{r}
+################################################################################
+# FIGURE 1
+################################################################################
+
 graph <- grViz("
 digraph civic_pipeline {
   graph [rankdir = TB, layout = dot]
@@ -137,18 +141,18 @@ names(ind_org_df)
 ```
 
 ```{r}
-# SDOH (2017???2021 ACS adapted by CDC)
+# SDOH (2017-2021 ACS adapted by CDC)
 
 # County-level
 sdoh_county <- read_csv(here("raw_data", "sdoh_county.csv")) %>%
-  select(StateAbbr, StateDesc, LocationID, MeasureID, Data_Value, TotalPopulation, Geolocation) 
+  select(StateAbbr, StateDesc, LocationID, MeasureID, Data_Value, TotalPopulation, Geolocation)
 
 sdoh_county_wide <- sdoh_county %>%
   pivot_wider(names_from = MeasureID, values_from = Data_Value)
 
 # ZIP code-level
 sdoh_zcta <- read_csv(here("raw_data", "sdoh_zcta.csv")) %>%
-  select(LocationID, MeasureID, Data_Value, TotalPopulation, Geolocation) 
+  select(LocationID, MeasureID, Data_Value, TotalPopulation, Geolocation)
 
 sdoh_zcta_wide <- sdoh_zcta %>%
   pivot_wider(names_from = MeasureID, values_from = Data_Value)
@@ -157,8 +161,8 @@ sdoh_zcta_wide <- sdoh_zcta %>%
 # Transform data 
 
 ```{r}
-nrow(ind_org_df)          # ~1.8M organizations
-mean(ind_org_df$is_po)    # ~23% use P.O. boxes
+nrow(ind_org_df) # ~1.8M organizations
+mean(ind_org_df$is_po) # ~23% use P.O. boxes
 ```
 
 ```{r}
@@ -167,10 +171,15 @@ df_all <- get_predicted_percent_ci(ind_org_df, "All organizations")
 df_box <- get_predicted_percent_ci(ind_org_df %>% filter(is_po != 1), "Excluding P.O. Box")
 
 comparison_df <- bind_rows(df_all, df_box)
-comparison_df
+
+head(comparison_df)
 ```
 
 ```{r}
+################################################################################
+# FIGURE s1
+################################################################################
+
 # Save the plot using the png() function
 png(filename = here("plots", "s1.png"), width = 1400, height = 1200, res = 100)
 
@@ -211,14 +220,12 @@ left_join(
 )
 ```
 
-
-
 ```{r}
 # Filter out PO Box orgs
 ind_org_df <- ind_org_df %>%
   filter(is_po != 1)
 
-nrow(ind_org_df)  # 1,363,701
+nrow(ind_org_df) # 1,363,701
 ```
   
 # Create datasets
@@ -263,36 +270,40 @@ cnts_counts <- ind_org_df %>%
 
 (cnts_counts %>%
   filter(n != 0, civic_org_sum == 0) %>%
-  nrow()) / (nrow(cnts_counts)) # 3% of counties are civic deserts 
+  nrow()) / (nrow(cnts_counts)) # 3% of counties are civic deserts
 ```
 
 ```{r}
 cnts_counts_cov <- cnts_counts %>%
-  left_join(sdoh_county_wide %>%
-              select(-StateDesc), 
-            by = c("FIPS" = "LocationID",
-                   "state" = "StateAbbr")) 
+  left_join(
+    sdoh_county_wide %>%
+      select(-StateDesc),
+    by = c(
+      "FIPS" = "LocationID",
+      "state" = "StateAbbr"
+    )
+  )
 
 cnts_counts_cov <- cnts_counts_cov %>%
   ungroup() %>%
   mutate(
-         civic_org_sum_normalized = 100000 * civic_org_sum/TotalPopulation, 
-         civic_opp_sum_normalized = 100000 * civic_opp_sum/TotalPopulation,
-         civic_opp_index = dplyr::ntile(civic_opp_sum_normalized, 5),
-         volunteer_sum_normalized = 100000 * volunteer_sum/TotalPopulation,
-         membership_sum_normalized = 100000 * membership_sum/TotalPopulation,
-         take_action_sum_normalized = 100000 * take_action_sum/TotalPopulation,
-         events_sum_normalized = 100000 * events_sum/TotalPopulation
-         )
+    civic_org_sum_normalized = 100000 * civic_org_sum / TotalPopulation,
+    civic_opp_sum_normalized = 100000 * civic_opp_sum / TotalPopulation,
+    civic_opp_index = dplyr::ntile(civic_opp_sum_normalized, 5),
+    volunteer_sum_normalized = 100000 * volunteer_sum / TotalPopulation,
+    membership_sum_normalized = 100000 * membership_sum / TotalPopulation,
+    take_action_sum_normalized = 100000 * take_action_sum / TotalPopulation,
+    events_sum_normalized = 100000 * events_sum / TotalPopulation
+  )
 
-round(mean(cnts_counts$n == 0), 2) # all these counties have an organization 
-round(mean(cnts_counts$civic_opp_sum == 0), 2) # 3% of the counties do not have any organization offering civic opportunity 
+round(mean(cnts_counts$n == 0), 2) # all these counties have an organization
+round(mean(cnts_counts$civic_opp_sum == 0), 2) # 3% of the counties do not have any organization offering civic opportunity
 
 cnts_counts_cov <- cnts_counts_cov %>%
   select(-c("HCOST", "CROWD", "AGE65"))
 
 length(setdiff(cnts_counts$FIPS, sdoh_county_wide$LocationID)) # 78 counties are missing
-78/3281 # 2%
+78 / 3281 # 2%
 ```
 
 ```{r}
@@ -327,7 +338,7 @@ zcta_counts <- ind_org_df %>%
 
 (zcta_counts %>%
   filter(n != 0, civic_org_sum == 0) %>%
-  nrow()) / (nrow(zcta_counts)) # 17% of ZIP codes are civic deserts 
+  nrow()) / (nrow(zcta_counts)) # 17% of ZIP codes are civic deserts
 ```
 
 ```{r}
@@ -346,7 +357,7 @@ zcta_counts_cov <- zcta_counts %>%
   select(-c("HCOST", "CROWD", "AGE65"))
 
 length(setdiff(zcta_counts$ZCTA, sdoh_zcta_wide$LocationID)) # 2,980 ZIP codes are missing
-2980/30988 # 10%
+2980 / 30988 # 10%
 ```
 
 ```{r}
@@ -358,28 +369,32 @@ write_csv(zcta_counts_cov %>% select(-Geolocation), here("data_outputs", "zcta_c
 ## The third datasets (what organizations are)
 
 ```{r}
-class_vec <- c("arts", "civic", "community", "econ", "education", "foundation",
-               "health", "hobby", "housing", "professional", "religious",
-               "research", "socialfraternal", "unions", "youth")
+class_vec <- c(
+  "arts", "civic", "community", "econ", "education", "foundation",
+  "health", "hobby", "housing", "professional", "religious",
+  "research", "socialfraternal", "unions", "youth"
+)
 
 civic_orgs <- civic_orgs %>%
-  #filter(!is.na(predicted)) %>%
-  mutate(class = case_match(predicted,
-                            class_vec[1] ~ "Arts & Cultural",
-                            class_vec[2] ~ "Political",
-                            class_vec[3] ~ "Community",
-                            class_vec[4] ~ "Economic",
-                            class_vec[5] ~ "Education",
-                            class_vec[6] ~ "Foundations",
-                            class_vec[7] ~ "Healthcare",
-                            class_vec[8] ~ "Hobby & Sports",
-                            class_vec[9] ~ "Housing",
-                            class_vec[10] ~ "Professional",
-                            class_vec[11] ~ "Religious",
-                            class_vec[12] ~ "Research & Think Tank",
-                            class_vec[13] ~ "Social & Fraternal",
-                            class_vec[14] ~ "Unions",
-                            class_vec[15] ~ "Youth"))
+  # filter(!is.na(predicted)) %>%
+  mutate(class = case_match(
+    predicted,
+    class_vec[1] ~ "Arts & Cultural",
+    class_vec[2] ~ "Political",
+    class_vec[3] ~ "Community",
+    class_vec[4] ~ "Economic",
+    class_vec[5] ~ "Education",
+    class_vec[6] ~ "Foundations",
+    class_vec[7] ~ "Healthcare",
+    class_vec[8] ~ "Hobby & Sports",
+    class_vec[9] ~ "Housing",
+    class_vec[10] ~ "Professional",
+    class_vec[11] ~ "Religious",
+    class_vec[12] ~ "Research & Think Tank",
+    class_vec[13] ~ "Social & Fraternal",
+    class_vec[14] ~ "Unions",
+    class_vec[15] ~ "Youth"
+  ))
 ```
 
 ### County
@@ -390,7 +405,7 @@ cnty_civic_org_type <- civic_orgs %>%
   count() %>%
   ungroup() %>%
   group_by(FIPS) %>%
-  mutate(freq = n/sum(n)) %>%
+  mutate(freq = n / sum(n)) %>%
   group_by(FIPS) %>%
   mutate(primary_org_cat = class[which.max(freq)]) %>%
   ungroup()
@@ -407,18 +422,22 @@ cnty_civic_org_type_dashboard <- civic_orgs %>%
   count() %>%
   ungroup() %>%
   group_by(FIPS) %>%
-  mutate(freq = n/sum(n)) %>%
+  mutate(freq = n / sum(n)) %>%
   group_by(FIPS) %>%
   mutate(primary_org_cat = class[which.max(freq)]) %>%
   ungroup()
 
 cnty_civic_type_dashboard <- cnty_civic_org_type_dashboard %>%
-  left_join(sdoh_county_wide %>%
-              select(-StateDesc), 
-            by = c("FIPS" = "LocationID",
-                   "state" = "StateAbbr")) %>% # n
+  left_join(
+    sdoh_county_wide %>%
+      select(-StateDesc),
+    by = c(
+      "FIPS" = "LocationID",
+      "state" = "StateAbbr"
+    )
+  ) %>% # n
   select(state, FIPS, class, n, freq, primary_org_cat, TotalPopulation) %>%
-  mutate(normalized_n = n/TotalPopulation) %>%
+  mutate(normalized_n = n / TotalPopulation) %>%
   select(state, FIPS, class, n, normalized_n, freq, primary_org_cat, TotalPopulation)
 
 # export CSV
@@ -433,7 +452,7 @@ zcta_civic_org_type <- civic_orgs %>%
   count() %>%
   ungroup() %>%
   group_by(ZCTA) %>%
-  mutate(freq = n/sum(n)) %>%
+  mutate(freq = n / sum(n)) %>%
   group_by(ZCTA) %>%
   mutate(primary_org_cat = class[which.max(freq)]) %>%
   ungroup()

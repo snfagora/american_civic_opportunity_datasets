@@ -14,28 +14,28 @@ if (!require(pacman)) install.packages("pacman")
 # Load required packages using pacman::p_load
 pacman::p_load(
   # broom,         # Convert model outputs to tidy tibbles
-  boot,            # Bootstrapping
-  tidyverse,       # Core data science packages (ggplot2, dplyr, etc.)
-  glue,            # String interpolation
-  here,            # File paths relative to project root
+  boot, # Bootstrapping
+  tidyverse, # Core data science packages (ggplot2, dplyr, etc.)
+  glue, # String interpolation
+  here, # File paths relative to project root
   # purrr,         # Functional programming tools
   # estimatr,      # Robust linear regression and related estimators
   # effectsize,    # Calculate and interpret effect sizes
   # sandwich,      # Robust standard errors for model objects
   # ggrepel,       # Improved text label placement in ggplot2
-  patchwork,       # Combine ggplots into multi-panel layouts
+  patchwork, # Combine ggplots into multi-panel layouts
   # ggpubr,        # Publication-ready ggplot enhancements
   # corrplot,      # Visualize correlation matrices
   # corrr,         # Tidy correlation workflows
   # correlation,   # Bayesian and frequentist correlation testing
   # callr,         # Run R code in a separate R session
-  modelsummary,    # Beautiful tables for regression results
+  modelsummary, # Beautiful tables for regression results
   # confintr,      # Confidence intervals for statistical measures
-  tinytable,       # Lightweight table creation for reports
+  tinytable, # Lightweight table creation for reports
   # sf,            # Simple features for spatial data
-  statebins,       # Tile grid maps of the U.S.
+  statebins, # Tile grid maps of the U.S.
   # RColorBrewer,  # Color palettes
-  arrow            # For reading/writing Apache Parquet files
+  arrow # For reading/writing Apache Parquet files
 )
 
 # Load tidylog to get informative messages from dplyr workflows
@@ -73,7 +73,9 @@ ggplot2::theme_set(custom_theme())
 ## The second datasets (degree of civic opportunity)
 
 # County-level summary: 3,281 counties × 23 variables
-cnts_counts_cov <- read_csv(here("data_outputs", "cnty_counts_cov.csv"))
+cnts_counts_cov <- 
+
+read_csv(here("data_outputs", "cnty_counts_cov.csv"))
 
 names(cnts_counts_cov)
 ```
@@ -102,21 +104,21 @@ names(zcta_civic_org_type)
 ```
 
 ```{r}
-length(unique(cnty_civic_org_type$FIPS)) #3,051
+length(unique(cnty_civic_org_type$FIPS)) # 3,051
 
 cnty_civic_org_type %>%
   select(FIPS, primary_org_cat) %>%
   distinct() %>%
   mutate(so_or_re = ifelse(str_detect(primary_org_cat, "Social|Reli"), 1, 0)) %>%
-  summarize(so_or_re_pct = mean(so_or_re, na.rm = T)) #79%
+  summarize(so_or_re_pct = mean(so_or_re, na.rm = T)) # 79%
 
-length(unique(zcta_civic_org_type$ZCTA)) #22,863
+length(unique(zcta_civic_org_type$ZCTA)) # 22,863
 
 zcta_civic_org_type %>%
   select(ZCTA, primary_org_cat) %>%
   distinct() %>%
   mutate(so_or_re = ifelse(str_detect(primary_org_cat, "Social|Reli"), 1, 0)) %>%
-  summarize(so_or_re_pct = mean(so_or_re, na.rm = T)) #60%
+  summarize(so_or_re_pct = mean(so_or_re, na.rm = T)) # 60%
 ```
 
 # Description
@@ -126,30 +128,33 @@ zcta_civic_org_type %>%
 ### Table 4 
 
 ```{r}
-# County 
-datasummary(civic_org_sum_normalized + civic_opp_sum_normalized + volunteer_sum_normalized + membership_sum_normalized + take_action_sum_normalized + events_sum_normalized ~ mean_no_na + std_no_na, 
-            data = cnts_counts_cov, 
-            output = "tinytable",
-            fmt = 2) %>%
+# County
+datasummary(civic_org_sum_normalized + civic_opp_sum_normalized + volunteer_sum_normalized + membership_sum_normalized + take_action_sum_normalized + events_sum_normalized ~ mean_no_na + std_no_na,
+  data = cnts_counts_cov,
+  output = "tinytable",
+  fmt = 2
+) %>%
   save_tt(
     here("tables", "table4.tex"),
     overwrite = TRUE
-    )
+  )
 ```
 
 ### Table 5 
 
 ```{r}
 # ZCTA
-datasummary(civic_org_sum_normalized +
-            civic_opp_sum_normalized + volunteer_sum_normalized + membership_sum_normalized + take_action_sum_normalized + events_sum_normalized ~ mean_no_na + std_no_na, 
-            data = zcta_counts_cov,
-            output = "tinytable",
-            fmt = 2) %>%
+datasummary(
+  civic_org_sum_normalized +
+    civic_opp_sum_normalized + volunteer_sum_normalized + membership_sum_normalized + take_action_sum_normalized + events_sum_normalized ~ mean_no_na + std_no_na,
+  data = zcta_counts_cov,
+  output = "tinytable",
+  fmt = 2
+) %>%
   save_tt(
     here("tables", "table5.tex"),
     overwrite = TRUE
-    )
+  )
 ```
 
 ### Figure 2
@@ -175,8 +180,9 @@ bar_plot <- binded_out %>%
   )) +
   geom_col(position = position_dodge(width = 0.9)) +
   geom_errorbar(aes(ymin = avg - 1.96 * se, ymax = avg + 1.96 * se),
-                width = 0.3,
-                position = position_dodge(width = 0.9)) +
+    width = 0.3,
+    position = position_dodge(width = 0.9)
+  ) +
   coord_flip() +
   labs(
     x = "",
@@ -219,7 +225,6 @@ length(unique(zcta_civic_org_type$ZCTA)) # n = 25,635
 
 ```{r}
 sd_binded_out <- bind_rows(
-
   cnty_civic_org_type %>%
     filter(!is.na(primary_org_cat)) %>%
     select(FIPS, primary_org_cat) %>%
@@ -227,9 +232,8 @@ sd_binded_out <- bind_rows(
     group_by(primary_org_cat) %>%
     count() %>%
     ungroup() %>%
-    mutate(freq = n/sum(n)) %>% 
+    mutate(freq = n / sum(n)) %>%
     mutate(unit = "County"),
-
   zcta_civic_org_type %>%
     filter(!is.na(primary_org_cat)) %>%
     select(ZCTA, primary_org_cat) %>%
@@ -237,9 +241,8 @@ sd_binded_out <- bind_rows(
     group_by(primary_org_cat) %>%
     count() %>%
     ungroup() %>%
-    mutate(freq = n/sum(n)) %>%
+    mutate(freq = n / sum(n)) %>%
     mutate(unit = "Zipcode")
-  
 )
 ```
 
@@ -250,23 +253,27 @@ sd_binded_out %>%
   ggplot(aes(x = fct_reorder(primary_org_cat, freq), y = freq, fill = unit)) +
   geom_col(position = position_dodge(width = 0.9)) +
   coord_flip() +
-  labs(x = "",
-       y = "Proportion",
-       fill = "Unit") +
+  labs(
+    x = "",
+    y = "Proportion",
+    fill = "Unit"
+  ) +
   scale_y_continuous(labels = scales::percent) +
-  geom_text(aes(label = scales::percent(freq, accuracy = 1)), 
-            position = position_dodge(width = 0.9), 
-            vjust = -0.5) +
+  geom_text(aes(label = scales::percent(freq, accuracy = 1)),
+    position = position_dodge(width = 0.9),
+    vjust = -0.5
+  ) +
   theme(
     legend.position = "bottom",
-    panel.border = element_blank(),   # Remove the border around the plot
-    axis.line = element_blank(),      # Remove the axis lines
-    axis.ticks = element_blank(),     # Remove the axis ticks
+    panel.border = element_blank(), # Remove the border around the plot
+    axis.line = element_blank(), # Remove the axis lines
+    axis.ticks = element_blank(), # Remove the axis ticks
     axis.text.x = element_text(size = 12), # Optional: Adjust x-axis text size
-    axis.text.y = element_text(size = 12)  # Optional: Adjust y-axis text size
-  )# Adjust `vjust` for vertical positioning of labels
+    axis.text.y = element_text(size = 12) # Optional: Adjust y-axis text size
+  ) # Adjust `vjust` for vertical positioning of labels
 
 ggsave(here("plots", "figure3.png"),
-       height = 10, 
-       width = 10)
+  height = 10,
+  width = 10
+)
 ```
