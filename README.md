@@ -53,7 +53,7 @@ Each observation includes:
 
 | Format     | File Size | Available At                                                                 |
 |------------|-----------|------------------------------------------------------------------------------|
-| `.parquet` | 31.7 MB   | [GitHub](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/raw_data/ind_org_df.parquet) and [Harvard Dataverse](https://doi.org/10.7910/DVN/IRCA7C) |
+| `.parquet` | 41.9 MB   | [GitHub](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/raw_data/ind_org_df.parquet) and [Harvard Dataverse](https://doi.org/10.7910/DVN/IRCA7C) |
 | `.csv`     | 125.4 MB  | [Harvard Dataverse](https://doi.org/10.7910/DVN/IRCA7C) only (not hosted on GitHub due to file size limits) |
 
 ---
