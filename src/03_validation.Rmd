@@ -60,7 +60,9 @@ cnts_civic_org_type <- read_csv(here("data_outputs", "cnty_civic_org_type.csv"))
 # Load ZIP-level aggregated datasets
 zcta_counts_cov <- read_csv(here("data_outputs", "zcta_counts_cov.csv"))          # Aggregated indicators and SDOH
 zcta_civic_org_type <- read_csv(here("data_outputs", "zcta_civic_org_type.csv"))  # Organizational type breakdown
+```
 
+```{r}
 # Merge relevant SDOH variables into county-level organizational type data
 cnts_civic_org_type <- cnts_civic_org_type %>%
   left_join(

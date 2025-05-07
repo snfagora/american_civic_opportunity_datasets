@@ -32,20 +32,31 @@ This dataset includes 1,774,798 de-identified nonprofit organizations. To protec
 
 Each observation includes:
 
-- Unique identifier: `id`, a row index used for reference; contains no identifying information.
-- Geographic identifiers:
-  - `state`, `city`, `FIPS` (county), `ZCTA` (ZIP Code Tabulation Area)
-- Civic opportunity indicators:
-  - `membership`, `volunteer`, `events`, `take_action`: binary indicators  
-  - `opp_binary`: 1 if any civic opportunity is present, 0 otherwise  
-  - `opp_mean`: average across the four civic indicators
-- Organizational classification:
-  - `predicted`: machine-predicted organizational type (e.g., religious, political, professional)
-- Address metadata:
-  - `is_po`: indicates if the address is a P.O. Box  
-  - `grouping_value`: anonymized internal ID for federated networks (e.g., chapters)
-- Financial attributes:
-  - `asset_amt`, `income_amt`, `revenue_amt`: financial indicators from IRS filings
+- Unique identifier:  
+  - `id`: a row index used for reference; contains no identifying information.
+
+- Geographic identifiers:  
+  - `state`: two-letter state abbreviation  
+  - `city`: city name listed in the IRS record  
+  - `FIPS`: county FIPS code  
+  - `ZCTA`: ZIP Code Tabulation Area
+
+- Civic opportunity indicators:  
+  - `membership`, `volunteer`, `events`, `take_action`: binary variables indicating whether the organization provides each type of civic opportunity (1 = provides the opportunity; 0 = does not provide it or information is unavailable)  
+  - `opp_binary`: equals 1 if the organization provides at least one civic opportunity; 0 otherwise  
+  - `opp_mean`: the mean of the four civic opportunity binary indicators
+
+- Organizational type:  
+  - `predicted`: machine-learned classification of the organization (e.g., religious, political, professional)
+
+- Address metadata:  
+  - `is_po`: indicates whether the organization lists a P.O. Box as its mailing address (1 = yes, 0 = no)  
+  - `grouping_value`: an anonymized internal identifier used to track federated organizations (e.g., national networks with local chapters)
+
+- Financial attributes:  
+  - `asset_amt`: total assets  
+  - `income_amt`: total income  
+  - `revenue_amt`: total revenue
 
 **Dimensions:** 1,774,798 rows $\times$ 17 columns
 
@@ -65,25 +76,39 @@ Derived from Dataset 1, this dataset aggregates civic opportunity indicators and
 
 Each observation includes:
 
-- Geographic identifiers:
-  - `FIPS` (county), `state`, `Geolocation`, `TotalPopulation`
-- Organizational counts:
+- Geographic identifiers:  
+  - `state`: two-letter state abbreviation  
+  - `FIPS`: county FIPS code  
+  - `ZCTA`: ZIP Code Tabulation Area
+
+- Organizational counts:  
   - `n`: total nonprofit organizations  
   - `civic_org_sum`: total civic opportunity organizations  
-  - `volunteer_sum`, `membership_sum`, `take_action_sum`, `events_sum`: civic opportunity type counts
-- Composite indicators:
-  - `civic_opp_sum`: sum across the four opportunity types  
-  - `civic_opp_index`: quintile-based civic opportunity index
-- Socioeconomic context (ACS-derived):
+  - `membership_sum`: total organizations providing membership opportunities  
+  - `volunteer_sum`: total organizations providing volunteer opportunities  
+  - `events_sum`: total organizations providing public event opportunities  
+  - `take_action_sum`: total organizations providing political or civic action opportunities
+
+- Composite civic opportunity scores:  
+  - `civic_opp_sum`: total opportunity score
+
+- Normalized civic opportunity indicators (per capita):  
+  - `civic_org_sum_normalized`: total number of civic organizations per capita  
+  - `civic_opp_sum_normalized`: total civic opportunities per capita  
+  - `civic_opp_index`: quintile-based civic opportunity index, derived by dividing `civic_opp_sum_normalized` into five equal-sized bins  
+  - `membership_sum_normalized`: total number of organizations providing membership opportunities per capita  
+  - `volunteer_sum_normalized`: total number of organizations providing volunteer opportunities per capita  
+  - `events_sum_normalized`: total number of organizations providing public event opportunities per capita  
+  - `take_action_sum_normalized`: total number of organizations providing political or civic action opportunities per capita
+
+- Sociodemographic indicators:  
+  - `TotalPopulation`: total population  
   - `POV150`: poverty rate  
   - `SNGPNT`: single-parent households  
-  - `BROAD`: no broadband access  
-  - `NOHSDP`: no high school diploma  
+  - `BROAD`: households without broadband access  
+  - `NOHSDP`: adults without a high school diploma  
   - `UNEMP`: unemployment rate  
   - `REMNRTY`: share of racial or ethnic minority residents
-- Normalized indicators (per capita or relative):
-  - `civic_org_sum_normalized`, `civic_opp_sum_normalized`  
-  - `volunteer_sum_normalized`, `membership_sum_normalized`, `take_action_sum_normalized`, `events_sum_normalized`
 
 **Dimensions:**
 - ZIP code level: 30,988 rows $\times$ 24 columns  
@@ -105,13 +130,21 @@ Also derived from Dataset 1, this dataset summarizes the types of organizations 
 
 Each observation includes:
 
-- Geographic identifiers:
-  - `FIPS` (county) or `ZCTA` (ZIP Code Tabulation Area)
-- Organizational type breakdown:
-  - `class`: organizational type (e.g., religious, political, professional)  
-  - `n`: number of organizations in that category  
-  - `freq`: share of civic organizations in that category  
-  - `primary_org_cat`: most common type in the given geography
+- Geographic identifiers:  
+  - `FIPS`: county FIPS code  
+  - `ZCTA`: ZIP Code Tabulation Area
+
+- Organizational counts:  
+  - `n`: number of civic opportunity???providing organizations of a given type in the geography
+
+- Organization type classification:  
+  - `class`: predicted organizational type (e.g., religious, political, professional)
+
+- Relative frequency:  
+  - `freq`: proportion of civic opportunity organizations in the geography that fall into the given class
+
+- Primary provider type:  
+  - `primary_org_cat`: the most common civic opportunity organization type in the geography; appears once per unit
 
 **Dimensions:**
 - ZIP code level: 150,162 rows $\times$ 5 columns  
