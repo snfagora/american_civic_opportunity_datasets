@@ -212,9 +212,15 @@ comparison_wide <- comparison_wide %>%
   )
 
 # View results sorted by largest absolute difference
-comparison_wide %>%
+percent_diff <- comparison_wide %>%
   arrange(desc(percent_diff_abs)) %>%
-  select(predicted, `All organizations`, `Excluding P.O. Box`, percent_diff)
+  select(predicted, `All organizations`, `Excluding P.O. Box`, percent_diff) %>%
+  pull(percent_diff)
+
+mean(abs(percent_diff)) # ~0.01
+sd(percent_diff) # ~0.02
+
+comparison_wide
 ```
 
 ### Table S2
