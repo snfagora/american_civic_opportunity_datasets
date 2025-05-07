@@ -22,7 +22,7 @@ This project provides three core datasets:
 - **Dataset 2**: Aggregated civic opportunity counts at the ZIP code and county levels  
 - **Dataset 3**: Aggregated organizational type breakdowns at the ZIP code and county levels  
 
-Datasets 2 and 3 are derived from Dataset 1 using [`01_dataset_generation.Rmd`](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/src/01_dataset_generation.Rmd), which also generates Figure 1 and Supplementary Figure S1.
+Datasets 2 and 3 are derived from Dataset 1 using [`01_dataset_generation.Rmd`](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/src/01_dataset_generation.Rmd), which also generates Figure 1 and Supplementary Table S2 and Figure S1.
 
 ---
 

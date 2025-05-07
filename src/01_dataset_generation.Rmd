@@ -23,6 +23,7 @@ pacman::p_load(
   here,         # Relative file paths
   patchwork,    # Combine ggplots
   modelsummary, # Summarizing model outputs
+  tinytable,    # Lightweight table creation for reports
   arrow,        # Apache Parquet support
   DiagrammeR,   # Diagram creation and visualization
   DiagrammeRsvg, # SVG export for diagrams
@@ -43,6 +44,8 @@ ggplot2::theme_set(custom_theme())   # Apply custom ggplot theme
 ```
 
 # Create a diagram to visualize data pipeline
+
+## Figure 1
 
 ```{r}
 ################################################################################
@@ -196,8 +199,60 @@ df_box <- get_predicted_percent_ci(ind_org_df %>% filter(is_po != 1), "Excluding
 # Combine both summaries into a single dataframe for plotting/comparison
 comparison_df <- bind_rows(df_all, df_box)
 
-head(comparison_df)
+# Spread the comparison data to wide format for easy comparison
+comparison_wide <- comparison_df %>%
+  select(group, predicted, percent) %>%
+  pivot_wider(names_from = group, values_from = percent)
+
+# Add a column for percent difference
+comparison_wide <- comparison_wide %>%
+  mutate(
+    percent_diff = (`Excluding P.O. Box` - `All organizations`),
+    percent_diff_abs = abs(percent_diff)
+  )
+
+# View results sorted by largest absolute difference
+comparison_wide %>%
+  arrange(desc(percent_diff_abs)) %>%
+  select(predicted, `All organizations`, `Excluding P.O. Box`, percent_diff)
 ```
+
+### Table S2
+
+```{r}
+################################################################################
+# Table s2
+################################################################################
+
+# Create a cleaner version of the comparison table
+table_s2 <- comparison_wide %>%
+  mutate(
+    `Difference (%)` = round(percent_diff, 2),
+    `All organizations` = round(`All organizations`, 2),
+    `Excluding P.O. Box` = round(`Excluding P.O. Box`, 2)
+  ) %>%
+  select(
+    `Organizational Type` = predicted,
+    `All organizations`,
+    `Excluding P.O. Box`,
+    `Difference (%)`
+  )
+
+# Note: Percentages are rounded to two decimal places. Difference is calculated as the percentage in the non???P.O. Box sample minus the full sample
+
+datasummary_df(
+  table_s2,
+  output = "latex",
+  fmt = 2,
+  title = "Table S2: Comparison of Organizational Types With and Without P.O. Box Exclusion"
+) %>%
+  save_tt(
+    here("tables", "tables2.tex"),
+    overwrite = TRUE
+  )
+```
+
+### Figure S1
 
 ```{r}
 ################################################################################
