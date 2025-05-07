@@ -47,7 +47,7 @@ cnty_pred_plot <- function(var, var_name) {
     bind_cols(ci95) %>%
     ggplot(aes(x = !!var, y = civic_opp_sum_normalized)) +
     geom_jitter(alpha = 0.2) +
-    geom_line(aes(y = fit, col = "OLS fit")) +
+    geom_line(aes(y = fit, col = "OLS fits")) +
     geom_ribbon(aes(ymin = lwr, ymax = upr, fill = "95% CIs"), alpha = 0.2) +
     annotate(
       "text", x = Inf, y = Inf, label = coeff_label,
@@ -55,12 +55,15 @@ cnty_pred_plot <- function(var, var_name) {
     ) +
     labs(
       y = "Civic opportunity scores",
-      x = var_name,
-      col = "OLS fit",
-      fill = "95% CIs"
+      x = var_name
     ) +
     scale_x_continuous(labels = scales::percent) +
-    theme_minimal()
+    theme_minimal() +
+    guides(
+      color = guide_legend(title = NULL),
+      fill = guide_legend(title = NULL)
+    )
+  
 }
 
 # Function to create ZIP-code-level prediction plot
@@ -91,7 +94,7 @@ zcta_pred_plot <- function(var, var_name) {
     bind_cols(ci95) %>%
     ggplot(aes(x = !!var, y = log10(civic_opp_sum_normalized + 1))) +
     geom_jitter(alpha = 0.2) +
-    geom_line(aes(y = fit, col = "OLS fit")) +
+    geom_line(aes(y = fit, col = "OLS fits")) +
     geom_ribbon(aes(ymin = lwr, ymax = upr, fill = "95% CIs"), alpha = 0.2) +
     annotate(
       "text", x = Inf, y = Inf, label = coeff_label,
@@ -99,12 +102,15 @@ zcta_pred_plot <- function(var, var_name) {
     ) +
     labs(
       y = "Log10(Civic opportunity scores)",
-      x = var_name,
-      col = "OLS fits",
-      fill = "95% CIs"
+      x = var_name
     ) +
     scale_x_continuous(labels = scales::percent) +
-    theme_minimal()
+    theme_minimal() +
+    guides(
+      color = guide_legend(title = NULL),
+      fill = guide_legend(title = NULL)
+    )
+  
 }
 
 # Helper functions

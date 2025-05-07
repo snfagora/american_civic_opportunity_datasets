@@ -50,87 +50,112 @@ ggplot2::theme_set(custom_theme())
 # Import data 
 
 ```{r}
-# Inidivdual org level data 
+# Load individual organization-level data from Parquet file
 org_df <- arrow::read_parquet(here("raw_data", "ind_org_df.parquet"))
 
-# County 
-cnts_counts_cov <- read_csv(here("data_outputs", "cnty_counts_cov.csv"))
-cnts_civic_org_type <- read_csv(here("data_outputs", "cnty_civic_org_type.csv"))
+# Load county-level aggregated datasets
+cnts_counts_cov <- read_csv(here("data_outputs", "cnty_counts_cov.csv"))          # Aggregated indicators and SDOH
+cnts_civic_org_type <- read_csv(here("data_outputs", "cnty_civic_org_type.csv"))  # Organizational type breakdown
 
-# Zipcode
-zcta_counts_cov <- read_csv(here("data_outputs", "zcta_counts_cov.csv"))
-zcta_civic_org_type <- read_csv(here("data_outputs", "zcta_civic_org_type.csv"))
+# Load ZIP-level aggregated datasets
+zcta_counts_cov <- read_csv(here("data_outputs", "zcta_counts_cov.csv"))          # Aggregated indicators and SDOH
+zcta_civic_org_type <- read_csv(here("data_outputs", "zcta_civic_org_type.csv"))  # Organizational type breakdown
 
-cnts_civic_org_type <- cnts_civic_org_type %>% left_join(cnts_counts_cov %>%
-                                                           select(FIPS, POV150, SNGPNT, BROAD, NOHSDP, UNEMP, REMNRTY), by = c("FIPS" = "FIPS"))
+# Merge relevant SDOH variables into county-level organizational type data
+cnts_civic_org_type <- cnts_civic_org_type %>%
+  left_join(
+    cnts_counts_cov %>%
+      select(FIPS, POV150, SNGPNT, BROAD, NOHSDP, UNEMP, REMNRTY),
+    by = c("FIPS" = "FIPS")
+  )
 
-zcta_civic_org_type <- zcta_civic_org_type %>% left_join(zcta_counts_cov %>%
-                                                           select(ZCTA, POV150, SNGPNT, BROAD, NOHSDP, UNEMP, REMNRTY), by = c("ZCTA"))
+# Merge relevant SDOH variables into ZIP-level organizational type data
+zcta_civic_org_type <- zcta_civic_org_type %>%
+  left_join(
+    zcta_counts_cov %>%
+      select(ZCTA, POV150, SNGPNT, BROAD, NOHSDP, UNEMP, REMNRTY),
+    by = c("ZCTA")
+  )
 ```
 
-# Preprocessing 
+# Normalize SDOH variables (county and ZIP)
 
 ```{r}
-# County 
+# Normalize county-level SDOH indicators to range from 0 to 1
+# This is min-max normalization: (x - min) / (max - min)
 cnts_counts_cov <- cnts_counts_cov %>%
-  #select(POV150, SNGPNT, BROAD, NOHSDP, UNEMP, REMNRTY) %>%
-  mutate(POV150 = normalize(POV150),
-         SNGPNT = normalize(SNGPNT),
-         BROAD = normalize(BROAD),
-         NOHSDP = normalize(NOHSDP),
-         UNEMP = normalize(UNEMP),
-         REMNRTY = normalize(REMNRTY))
+  mutate(
+    POV150  = normalize(POV150),   # Poverty rate
+    SNGPNT  = normalize(SNGPNT),   # Single-parent households
+    BROAD   = normalize(BROAD),    # No broadband access
+    NOHSDP  = normalize(NOHSDP),   # No high school diploma
+    UNEMP   = normalize(UNEMP),    # Unemployment rate
+    REMNRTY = normalize(REMNRTY)   # Racial/ethnic minority share
+  )
 
-# Zipcode
+# Apply the same min-max normalization to ZIP-level variables
 zcta_counts_cov <- zcta_counts_cov %>%
-  #select(POV150, SNGPNT, BROAD, NOHSDP, UNEMP, REMNRTY) %>%
-  mutate(POV150 = normalize(POV150),
-         SNGPNT = normalize(SNGPNT),
-         BROAD = normalize(BROAD),
-         NOHSDP = normalize(NOHSDP),
-         UNEMP = normalize(UNEMP),
-         REMNRTY = normalize(REMNRTY))
+  mutate(
+    POV150  = normalize(POV150),
+    SNGPNT  = normalize(SNGPNT),
+    BROAD   = normalize(BROAD),
+    NOHSDP  = normalize(NOHSDP),
+    UNEMP   = normalize(UNEMP),
+    REMNRTY = normalize(REMNRTY)
+  )
 ```
 
 # Validation
 
-## The org level data
+## The first dataset
 
 ```{r}
+# This chunk evaluates whether "foundation" organizations are disproportionately likely to be classified as low or high civic opportunity types, based on their civic activity score.
+
 org_df %>%
   mutate(
+    # Compute civic_score: if all four civic indicators are missing or zero, set to NA
     civic_score = ifelse(
       (is.na(volunteer) & is.na(membership) & is.na(take_action) & is.na(events)) |
       (rowSums(across(c(volunteer, membership, take_action, events)), na.rm = TRUE) == 0),
       NA,
-      idx_mean(volunteer, membership, take_action, events)
+      idx_mean(volunteer, membership, take_action, events) # average across 4 binary indicators
     ),
+    # Group civic_score into three categories
     civic_score_group = case_when(
       is.na(civic_score)        ~ "No Civic Score", 
       civic_score < 0.5         ~ "Low Civic Score",
       civic_score >= 0.5        ~ "Median or High Civic Score"
     ),
+    # Set order for grouping factor
     civic_score_group = factor(civic_score_group, levels = c(
       "No Civic Score", "Low Civic Score", "Median or High Civic Score"
     ))
   ) %>%
+  # Filter to organizations with a predicted class
   filter(!is.na(predicted)) %>%
+  # Count rows by civic_score_group and predicted class
   group_by(civic_score_group, predicted) %>%
   summarise(n = n(), .groups = "drop") %>%
+  # Convert counts to proportions within each civic score group
   group_by(civic_score_group) %>%
   mutate(fraction = n / sum(n)) %>%
+  # Filter to only show the "foundation" class
   filter(predicted == "foundation")
 ```
 
 ```{r}
+# Generate bootstrapped financial summaries by civic score group
 summary_df_long <- org_df %>%
   mutate(
+    # Recompute civic opportunity score (0???1) or set to NA if no info
     civic_score = ifelse(
       (is.na(volunteer) & is.na(membership) & is.na(take_action) & is.na(events)) |
       (rowSums(across(c(volunteer, membership, take_action, events)), na.rm = TRUE) == 0),
       NA,
       idx_mean(volunteer, membership, take_action, events)
     ),
+    # Bin organizations into civic opportunity score categories
     civic_score_group = case_when(
       is.na(civic_score)        ~ "No Civic Score", 
       civic_score < 0.5         ~ "Low Civic Score",
@@ -140,35 +165,43 @@ summary_df_long <- org_df %>%
       "No Civic Score", "Low Civic Score", "Median or High Civic Score"
     ))
   ) %>%
+  # Group by civic score category and apply bootstrapped medians with CIs
   group_by(civic_score_group) %>%
   summarize(
     asset   = list(bootstrap_median_ci(asset_amt)),
     income  = list(bootstrap_median_ci(income_amt)),
     revenue = list(bootstrap_median_ci(revenue_amt)),
     .groups = "drop"
-  ) %>%
+  ) 
+
+# Reshape data to long format: one row per (score group × metric)
+summary_df_long <- summary_df_long %>%
   pivot_longer(
     cols = c(asset, income, revenue),
     names_to = "metric",
     values_to = "boot_result"
   ) %>%
-  unnest_wider(boot_result, names_sep = "_")  # yields boot_result_median, _ci_low, _ci_high
+  unnest_wider(boot_result, names_sep = "_")  # creates columns: median, ci_low, ci_high
 
-unique(summary_df_long$civic_score_group) # should be three groups 
+# Confirm that all three civic score groups are present
+unique(summary_df_long$civic_score_group)
 ```
 
 ### Figure 4
 
 ```{r}
-summary_df_long <- summary_df_long %>%
-  mutate(metric = str_to_title(metric))  # Capitalize: "Asset", "Income", "Revenue")
-```
+################################################################################
+# FIGURE 4
+################################################################################
 
-```{r}
-# Open PNG graphics device (base R)
+# Prettify metric names 
+summary_df_long <- summary_df_long %>%
+  mutate(metric = str_to_title(metric))  # e.g., "asset" → "Asset"
+
+# Open a PNG graphics device
 png(filename = here::here("plots", "figure4.png"), width = 1200, height = 900, res = 120)
 
-# Plot
+# Create grouped bar chart with error bars and text labels
 ggplot(summary_df_long, aes(x = factor(civic_score_group), y = boot_result_median, group = metric)) +
   geom_col(aes(fill = metric), position = position_dodge(width = 0.8), width = 0.7, alpha = 0.7) +
   geom_errorbar(
@@ -207,31 +240,32 @@ ggplot(summary_df_long, aes(x = factor(civic_score_group), y = boot_result_media
 dev.off()
 ```
 
-## The first dataset (degree)
-
-"POV150" = "Persons living below 150% of the poverty level"
-"SNGPNT" = "Single-parent households"
-"BROAD" = "No broadband internet subscription among households"
-"NOHSDP" = "No high school diploma among adults aged 25 years or older" 
-"UNEMP" = "Unemployment among people 16 years and older in the labor force"
-"REMNRTY" = "Persons of racial or ethnic minority status"
+## The second dataset (what we do)
 
 ### County 
 
 #### Figure 5
 
 ```{r}
+################################################################################
+# FIGURE 5
+################################################################################
+
+# Combine six SDOH predictor plots into one figure for counties
 wrap_plots(
-  cnty_pred_plot(REMNRTY, "Persons of racial or ethnic minority status"), # race
-  cnty_pred_plot(POV150, "Persons living below 150% of the poverty level"), # poverty
-  cnty_pred_plot(NOHSDP, "No high school diploma among adults aged 25 years or older"), # college education
-  cnty_pred_plot(SNGPNT, "Single-parent households"), # single parent household 
-  cnty_pred_plot(UNEMP, "Unemployment among people 16 years and older"), # unemployment 
-  cnty_pred_plot(BROAD, "No broadband internet subscription among households"), # internet connection
+  cnty_pred_plot(REMNRTY, "Persons of racial or ethnic minority status"),        # Race
+  cnty_pred_plot(POV150, "Persons living below 150% of the poverty level"),         # Poverty
+  cnty_pred_plot(NOHSDP, "No high school diploma among adults aged 25 years or older"),# Education
+  cnty_pred_plot(SNGPNT, "Single-parent households"),                                    # Family structure
+  cnty_pred_plot(UNEMP, "Unemployment among people 16 years and older"),                  # Labor force
+  cnty_pred_plot(BROAD, "No broadband internet subscription among households"),    # Internet access
   ncol = 3
+) + plot_annotation(
+      tag_levels = "a",      # Labels panels (a), (b), ...
+      title = "Unit: County" # Overall figure title
 ) +
-  plot_annotation(tag_levels = "a", title = "Unit: County") +
-  plot_layout(guides = "collect")
+  plot_layout(guides = "collect") # Collect legends into a single guide
+
 
 ggsave(here("plots", "figure5.png"), width = 14, height = 12)
 ```
@@ -241,26 +275,35 @@ ggsave(here("plots", "figure5.png"), width = 14, height = 12)
 #### Figure 6
 
 ```{r}
+################################################################################
+# FIGURE 6
+################################################################################
+
+# Combine six SDOH predictor plots into one figure for ZIP codes
 wrap_plots(
-  zcta_pred_plot(REMNRTY, "Persons of racial or ethnic minority status"), # race
-  zcta_pred_plot(POV150, "Persons living below 150% of the poverty level"), # poverty
-  zcta_pred_plot(NOHSDP, "No high school diploma among adults aged 25 years or older"), # college education
-  zcta_pred_plot(SNGPNT, "Single-parent households"), # single parent household 
-  zcta_pred_plot(UNEMP, "Unemployment among people 16 years and older"), # unemployment 
-  zcta_pred_plot(BROAD, "No broadband internet subscription among households"), # internet connection
+  zcta_pred_plot(REMNRTY, "Persons of racial or ethnic minority status"),         # Race
+  zcta_pred_plot(POV150, "Persons living below 150% of the poverty level"),       # Poverty
+  zcta_pred_plot(NOHSDP, "No high school diploma among adults aged 25 years or older"), # Education
+  zcta_pred_plot(SNGPNT, "Single-parent households"),                              # Family structure
+  zcta_pred_plot(UNEMP, "Unemployment among people 16 years and older"),           # Labor force
+  zcta_pred_plot(BROAD, "No broadband internet subscription among households"),    # Internet access
   ncol = 3
+) + plot_annotation(
+      tag_levels = "a",       # Labels panels (a), (b), ...
+      title = "Unit: ZIP code" # Overall figure title
 ) +
-  plot_annotation(tag_levels = "a", title = "Unit: ZIP code") +
-  plot_layout(guides = "collect")
+  plot_layout(guides = "collect") # Collect legends into a single guide
 
 ggsave(here("plots", "figure6.png"), width = 14, height = 12)
 ```
 
-## The second dataset (kind)
+## The third dataset (who we are)
 
 ### County 
 
 ```{r}
+# Normalize county-level covariates
+# This is min-max normalization: (x - min) / (max - min)
 cnts_civic_org_type <- cnts_civic_org_type %>%
   mutate(POV150 = normalize(POV150),
          SNGPNT = normalize(SNGPNT),
@@ -269,9 +312,11 @@ cnts_civic_org_type <- cnts_civic_org_type %>%
          UNEMP = normalize(UNEMP),
          REMNRTY = normalize(REMNRTY))
 
+# Recode predicted class into two categories
 cnts_civic_org_type <- cnts_civic_org_type %>%
   mutate(new_class = ifelse(str_detect(class, "Rel|Social"), "Religious or Social & Fraternal", "Others"))
 
+# Compute share of religious/social orgs per county
 cnts_civic_org_new_type <- cnts_civic_org_type %>%
   group_by(new_class, FIPS) %>%
   mutate(re_or_so_freq = sum(freq)) %>%
@@ -279,8 +324,10 @@ cnts_civic_org_new_type <- cnts_civic_org_type %>%
   select(FIPS, re_or_so_freq, POV150:REMNRTY) %>%
   distinct()
 
+# Estimate OLS model for predictors of religious/social org share
 sum_cnts_civic_org_type <- summary_class_civic_org(cnts_civic_org_new_type)
   
+# Plot OLS estimates with 95% CIs (county-level)
 cnty_type_plot <- sum_cnts_civic_org_type %>%
   ggplot(aes(x = fct_reorder(name, estimate), y = estimate, ymax = conf.high, ymin = conf.low)) +
   geom_col(alpha = 0.5, position = position_dodge(width = 0.9)) +
@@ -297,6 +344,8 @@ cnty_type_plot <- sum_cnts_civic_org_type %>%
 ### ZIP code 
 
 ```{r}
+# Normalize ZIP code-level covariates
+# This is min-max normalization: (x - min) / (max - min)
 zcta_civic_org_type <- zcta_civic_org_type %>%
   mutate(POV150 = normalize(POV150),
          SNGPNT = normalize(SNGPNT),
@@ -305,9 +354,11 @@ zcta_civic_org_type <- zcta_civic_org_type %>%
          UNEMP = normalize(UNEMP),
          REMNRTY = normalize(REMNRTY))
 
+# Recode predicted class into two categories
 zcta_civic_org_type <- zcta_civic_org_type %>%
   mutate(new_class = ifelse(str_detect(class, "Rel|Social"), "Religious or Social & Fraternal", "Others"))
 
+# Compute share of religious/social orgs per ZIP code
 zcta_civic_org_new_type <- zcta_civic_org_type %>%
   group_by(new_class, ZCTA) %>%
   mutate(re_or_so_freq = sum(freq)) %>%
@@ -315,10 +366,10 @@ zcta_civic_org_new_type <- zcta_civic_org_type %>%
   select(ZCTA, re_or_so_freq, POV150:REMNRTY) %>%
   distinct()
 
+# Estimate OLS model for predictors of religious/social org share
 sum_zcta_civic_org_type <- summary_class_civic_org(zcta_civic_org_new_type)
-```
 
-```{r}
+# Plot OLS estimates with 95% CIs (ZIP code-level)
 zcta_type_plot <- sum_zcta_civic_org_type %>%
  ggplot(aes(x = fct_reorder(name, estimate), y = estimate, ymax = conf.high, ymin = conf.low)) +
   geom_col(alpha = 0.5, position = position_dodge(width = 0.9)) +
@@ -333,6 +384,7 @@ zcta_type_plot <- sum_zcta_civic_org_type %>%
 ```
 
 ```{r}
+# Combine ZIP and county estimates into a single data frame
 binded_sums <- bind_rows(sum_cnts_civic_org_type %>% 
             mutate(unit = "County"), 
                          sum_zcta_civic_org_type %>%
@@ -342,6 +394,11 @@ binded_sums <- bind_rows(sum_cnts_civic_org_type %>%
 ### Figure 7
 
 ```{r}
+################################################################################
+# FIGURE 7
+################################################################################
+
+# Plot combined OLS estimates with 95% CIs, faceted by unit
 binded_sums %>%
   ggplot(aes(x = fct_reorder(name, estimate), y = estimate, ymax = conf.high, ymin = conf.low)) +
   geom_col(alpha = 0.5, position = position_dodge(width = 0.9)) +
@@ -355,5 +412,5 @@ binded_sums %>%
   geom_hline(yintercept = 0, col = "red", linetype = 2) +
   facet_wrap(~unit)
 
-ggsave(here("plots", "figure7.png"), width = 10)
+ggsave(here("plots", "figure7.png"), width = 10, height = 8)
 ```
