@@ -111,6 +111,15 @@ zcta_pred_plot <- function(var, var_name) {
 mean_no_na <- function(x) mean(x, na.rm = TRUE)
 std_no_na <- function(x) sd(x, na.rm = TRUE) / sqrt(length(x))
 
+# Define a helper function to compute mean and CI
+summary_ci <- function(x) {
+  m <- mean(x, na.rm = TRUE)
+  se <- sd(x, na.rm = TRUE) / sqrt(sum(!is.na(x)))
+  lower <- m - 1.96 * se
+  upper <- m + 1.96 * se
+  sprintf("%.2f [%.2f, %.2f]", m, lower, upper)
+}
+
 # Custom theme for plots
 custom_theme <- function(size = 13) {
   theme_bw(base_size = size) +

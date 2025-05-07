@@ -8,7 +8,7 @@ output: html_document
 # Import pkgs 
 
 ```{r}
-# Load or install `pacman` package for managing other packages
+# Load or install the `pacman` package to streamline package management
 if (!require(pacman)) install.packages("pacman")
 
 # Load required packages using pacman::p_load
@@ -57,34 +57,20 @@ ggplot2::theme_set(custom_theme())
 
 # Import data 
 
-- The second dataset filenmaes 
-    - cnty_counts_cov.csv
-    - zcta_counts_cov.csv
-    - cnty_counts_cov.rds
-    - zcta_counts_cov.rds
-    
-- The third daaset filenames 
-    - cnty_civic_org_type.csv
-    - zcta_civic_org_type.csv
-    - cnty_civic_org_type.rds
-    - zcta_civic_org_type.rds
-    
+
 ```{r}
-## The second datasets (degree of civic opportunity)
+# Load key processed datasets from disk for summary and visualization.
+# These include:
+# - Second datasets: cnty/zcta_counts_cov (degree of civic opportunity)
+# - Third datasets: cnty/zcta_civic_org_type (type of civic opportunity)
 
 # County-level summary: 3,281 counties × 23 variables
-cnts_counts_cov <- 
+cnty_counts_cov <- read_csv(here("data_outputs", "cnty_counts_cov.csv"))
+dim(cnty_counts_cov) # 3,281 rows × 23 variables
 
-read_csv(here("data_outputs", "cnty_counts_cov.csv"))
-
-names(cnts_counts_cov)
-```
-
-```{r}
 # ZIP-level summary: 30,988 ZIP codes × 23 variables
 zcta_counts_cov <- read_csv(here("data_outputs", "zcta_counts_cov.csv"))
-
-names(zcta_counts_cov)
+dim(zcta_counts_cov) # 30,988 rows × 23 variables)
 ```
 
 ```{r}
@@ -92,64 +78,73 @@ names(zcta_counts_cov)
 
 # County-level type classification: 29,687 rows × 5 columns
 cnty_civic_org_type <- read_csv(here("data_outputs", "cnty_civic_org_type.csv"))
+dim(cnty_civic_org_type) # 29,687 rows × 5 columns
 
-names(cnty_civic_org_type)
-```
-
-```{R}
 # ZIP-level type classification: 150,162 rows × 5 columns
 zcta_civic_org_type <- read_csv(here("data_outputs", "zcta_civic_org_type.csv"))
-
-names(zcta_civic_org_type)
+dim(zcta_civic_org_type) # 150,162 rows × 5 columns
 ```
 
+# Summary of the datasets
+
 ```{r}
-length(unique(cnty_civic_org_type$FIPS)) # 3,051
+# Count unique counties represented in the third ddatasets 
+length(unique(cnty_civic_org_type$FIPS)) # 3,124
+# Count unique ZIP codes represented in the third datasets
+length(unique(zcta_civic_org_type$ZCTA)) # 25,635
 
+# For counties: calculate the proportion where the primary org category is "Social" or "Religious"
 cnty_civic_org_type %>%
-  select(FIPS, primary_org_cat) %>%
+  select(FIPS, primary_org_cat) %>%    # Focus on one row per county and its dominant class
   distinct() %>%
-  mutate(so_or_re = ifelse(str_detect(primary_org_cat, "Social|Reli"), 1, 0)) %>%
-  summarize(so_or_re_pct = mean(so_or_re, na.rm = T)) # 79%
+  mutate(so_or_re = ifelse(str_detect(primary_org_cat, "Social|Reli"), 1, 0)) %>%  # Flag if dominant class matches pattern
+  summarize(so_or_re_pct = mean(so_or_re, na.rm = TRUE))  # Share of counties with social or religious orgs dominant (~80%)
 
-length(unique(zcta_civic_org_type$ZCTA)) # 22,863
-
+# For ZIPs: same procedure ??? compute proportion with “Social” or “Religious” as dominant category
 zcta_civic_org_type %>%
   select(ZCTA, primary_org_cat) %>%
   distinct() %>%
   mutate(so_or_re = ifelse(str_detect(primary_org_cat, "Social|Reli"), 1, 0)) %>%
-  summarize(so_or_re_pct = mean(so_or_re, na.rm = T)) # 60%
+  summarize(so_or_re_pct = mean(so_or_re, na.rm = TRUE))  # Result: ~61%
 ```
 
 # Description
 
 ## The first datasets 
 
-### Table 4 
-
-```{r}
-# County
-datasummary(civic_org_sum_normalized + civic_opp_sum_normalized + volunteer_sum_normalized + membership_sum_normalized + take_action_sum_normalized + events_sum_normalized ~ mean_no_na + std_no_na,
-  data = cnts_counts_cov,
-  output = "tinytable",
-  fmt = 2
-) %>%
-  save_tt(
-    here("tables", "table4.tex"),
-    overwrite = TRUE
-  )
-```
-
 ### Table 5 
 
 ```{r}
-# ZCTA
-datasummary(
-  civic_org_sum_normalized +
-    civic_opp_sum_normalized + volunteer_sum_normalized + membership_sum_normalized + take_action_sum_normalized + events_sum_normalized ~ mean_no_na + std_no_na,
-  data = zcta_counts_cov,
-  output = "tinytable",
-  fmt = 2
+################################################################################
+# Table 5
+################################################################################
+
+# Generate a summary table of normalized civic opportunity metrics (mean + 95% CIs) at the county level
+
+# Step 1: Precompute mean and 95% confidence intervals
+ci_stats_cnty <- cnty_counts_cov %>%
+  summarise(across(
+    c(
+      civic_org_sum_normalized, civic_opp_sum_normalized,
+      volunteer_sum_normalized, membership_sum_normalized,
+      take_action_sum_normalized, events_sum_normalized
+    ),
+    ~ {
+      m <- mean(.x, na.rm = TRUE)
+      se <- sd(.x, na.rm = TRUE) / sqrt(sum(!is.na(.x)))
+      lower <- m - 1.96 * se
+      upper <- m + 1.96 * se
+      sprintf("%.2f [%.2f, %.2f]", m, lower, upper)
+    }
+  )) %>%
+  pivot_longer(everything(), names_to = "Variable", values_to = "Mean [95% CI]")
+
+# Step 2: Use datasummary_df to format the table
+datasummary_df(
+  ci_stats_cnty,
+  output = "latex",
+  fmt = 2,
+  title = "County-Level Civic Opportunity Indicators"
 ) %>%
   save_tt(
     here("tables", "table5.tex"),
@@ -157,20 +152,65 @@ datasummary(
   )
 ```
 
+### Table 6
+
+```{r}
+################################################################################
+# Table 6
+################################################################################
+
+# Generate a summary table of normalized civic opportunity metrics (mean + 95% CIs) at the ZIP code level
+
+# Step 1: Precompute mean and 95% confidence intervals
+ci_stats_zcta <- zcta_counts_cov %>%
+  summarise(across(
+    c(
+      civic_org_sum_normalized, civic_opp_sum_normalized,
+      volunteer_sum_normalized, membership_sum_normalized,
+      take_action_sum_normalized, events_sum_normalized
+    ),
+    ~ {
+      m <- mean(.x, na.rm = TRUE)
+      se <- sd(.x, na.rm = TRUE) / sqrt(sum(!is.na(.x)))
+      lower <- m - 1.96 * se
+      upper <- m + 1.96 * se
+      sprintf("%.2f [%.2f, %.2f]", m, lower, upper)
+    }
+  )) %>%
+  pivot_longer(everything(), names_to = "Variable", values_to = "Mean [95% CI]")
+
+# Step 2: Use datasummary_df to format the table
+datasummary_df(
+  ci_stats_zcta,
+  output = "latex",
+  fmt = 2,
+  title = "ZIP code-Level Civic Opportunity Indicators"
+) %>%
+  save_tt(
+    here("tables", "table6.tex"),
+    overwrite = TRUE
+  )
+```
+
 ### Figure 2
 
 ```{r}
-# Bind summarized data
+################################################################################
+# FIGURE 2
+################################################################################
+
+# Bind county and ZIP-level summary data for plotting
+# `civic_opp_index` is used to harmonize across geographic levels
 binded_out <- bind_cnty_zcta_summaries(civic_opp_index, "Civic opportunity")
 
-# Vector of 50 U.S. state abbreviations (excluding DC and territories)
+# Define list of 50 U.S. states (excludes DC and territories)
 state_abb_50 <- state.abb
 
-# Filter to include only the 50 states
+# Filter the dataset to include only those 50 states
 binded_out <- binded_out %>%
   filter(state %in% state_abb_50)
 
-# Bar plot with error bars
+#Bar Plot: Mean civic opportunity index by state and unit
 bar_plot <- binded_out %>%
   mutate(state = factor(state)) %>%
   ggplot(aes(
@@ -190,11 +230,11 @@ bar_plot <- binded_out %>%
     fill = "Unit"
   )
 
-# Statebins plot
+# Statebins Map: Visual summary using U.S. tile grid
 statebin_plot <- binded_out %>%
   ggplot(aes(state = state, fill = avg)) +
   geom_statebins() +
-  facet_wrap(~unit) +
+  facet_wrap(~unit) + # Separate facets for counties vs ZIPs
   theme_statebins() +
   theme(
     plot.title = element_text(size = 16, hjust = 0),
@@ -207,7 +247,7 @@ combined_plot <- bar_plot + statebin_plot + plot_annotation(tag_levels = "a")
 
 combined_plot
 
-# Save to file
+# Save combined figure as PNG
 ggsave(
   filename = here("plots", "figure2.png"),
   plot = combined_plot,
@@ -219,11 +259,9 @@ ggsave(
 ## The second datasets 
 
 ```{r}
-length(unique(cnty_civic_org_type$FIPS)) # n = 3,124
-length(unique(zcta_civic_org_type$ZCTA)) # n = 25,635
-```
+# Combine county and ZIP-level datasets into a long-format summary
+# Only keep distinct unit-category combinations
 
-```{r}
 sd_binded_out <- bind_rows(
   cnty_civic_org_type %>%
     filter(!is.na(primary_org_cat)) %>%
@@ -232,8 +270,9 @@ sd_binded_out <- bind_rows(
     group_by(primary_org_cat) %>%
     count() %>%
     ungroup() %>%
-    mutate(freq = n / sum(n)) %>%
+    mutate(freq = n / sum(n)) %>% # Calculate relative frequency per category 
     mutate(unit = "County"),
+  
   zcta_civic_org_type %>%
     filter(!is.na(primary_org_cat)) %>%
     select(ZCTA, primary_org_cat) %>%
@@ -249,6 +288,11 @@ sd_binded_out <- bind_rows(
 ### Figure 3 
 
 ```{r}
+################################################################################
+# FIGURE 3
+################################################################################
+
+# Create bar plot comparing frequencies of dominant org types by unit (County vs ZIP)
 sd_binded_out %>%
   ggplot(aes(x = fct_reorder(primary_org_cat, freq), y = freq, fill = unit)) +
   geom_col(position = position_dodge(width = 0.9)) +
