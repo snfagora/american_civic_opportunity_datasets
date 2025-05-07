@@ -217,8 +217,8 @@ percent_diff <- comparison_wide %>%
   select(predicted, `All organizations`, `Excluding P.O. Box`, percent_diff) %>%
   pull(percent_diff)
 
-mean(abs(percent_diff)) # ~0.01
-sd(percent_diff) # ~0.02
+mean(abs(percent_diff)) # ~0.09
+sd(abs(percent_diff)) # ~0.10
 
 comparison_wide
 ```
