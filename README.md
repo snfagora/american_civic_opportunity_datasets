@@ -32,7 +32,7 @@ This dataset includes 1,774,798 de-identified nonprofit organizations. To protec
 
 Each observation includes:
 
-- Unique identifier: `id`: sequetial row number 
+- Unique identifier: `id`, a row index used for reference; contains no identifying information.
 - Geographic identifiers:
   - `state`, `city`, `FIPS` (county), `ZCTA` (ZIP Code Tabulation Area)
 - Civic opportunity indicators:
@@ -55,6 +55,7 @@ Each observation includes:
 |------------|-----------|------------------------------------------------------------------------------|
 | `.parquet` | 41.9 MB   | [GitHub](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/raw_data/ind_org_df.parquet) and [Harvard Dataverse](https://doi.org/10.7910/DVN/IRCA7C) |
 | `.csv`     | 125.4 MB  | [Harvard Dataverse](https://doi.org/10.7910/DVN/IRCA7C) only (not hosted on GitHub due to file size limits) |
+| `.rds`     | 286.1 MB  | [Harvard Dataverse](https://doi.org/10.7910/DVN/IRCA7C) only (not hosted on GitHub due to file size limits) |
 
 ---
 

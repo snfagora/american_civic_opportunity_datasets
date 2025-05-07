@@ -16,7 +16,7 @@ if (!require(pacman)) {
 
 # Load required packages using pacman
 pacman::p_load(
-  vroom,        # Fast data import
+  vroom,        # Fast reading of large csv files
   tidyverse,    # Data wrangling and visualization
   binom,        # Binomial confidence intervals
   glue,         # String interpolation
@@ -29,17 +29,17 @@ pacman::p_load(
   rsvg          # Convert SVG to other formats
 )
 
-# Load tidylog for logging data manipulation transparently
-library("tidylog", warn.conflicts = FALSE)
-
 # Load a GitHub package for additional functionality
 devtools::install_github("graemeblair/stdidx")
 library(stdidx)
 
-# Set plotting options and load custom theme settings
-options(es.use_symbols = TRUE)
-source(here("functions", "utils.r")) # Load utility functions
-ggplot2::theme_set(custom_theme())   # Apply custom theme
+# Load tidylog for logging data manipulation transparently
+library("tidylog", warn.conflicts = FALSE)
+
+# Load custom plotting theme and utility functions
+options(es.use_symbols = TRUE) # Use symbols in plots
+source(here("functions", "utils.r")) # Custom utility functions
+ggplot2::theme_set(custom_theme())   # Apply custom ggplot theme
 ```
 
 # Create a diagram to visualize data pipeline
@@ -47,6 +47,9 @@ ggplot2::theme_set(custom_theme())   # Apply custom theme
 ```{r}
 ################################################################################
 # FIGURE 1
+# This figure illustrates the data processing pipeline, showing the flow 
+# from raw data sources to final datasets. It helps readers understand
+# the logical steps involved in dataset generation.
 ################################################################################
 
 # Define a data pipeline using DiagrammeR
@@ -137,16 +140,18 @@ charToRaw(svg) %>% rsvg_png(here("plots", "figure1.png")) # Convert to PNG
 ind_org_df <- vroom::vroom(here("raw_data", "ind_org_df.csv")) 
 
 # Export the file to parquet   
+# ?????? Note: This may exceed GitHub’s file size limit???exclude from version control
 arrow::write_parquet(ind_org_df, here("raw_data", "ind_org_df.parquet"))
 
 # Export the file to RDS 
+# ?????? Note: This may exceed GitHub’s file size limit???exclude from version control
 readr::write_rds(ind_org_df, here("raw_data", "ind_org_df.rds"))
 
 # Display the number of organizations in the dataset
-nrow(ind_org_df)
+nrow(ind_org_df) # 1.8M
 
 # Show the column names of the dataset
-names(ind_org_df)
+names(ind_org_df) # 17 variables 
 ```
 
 ```{r}
@@ -169,7 +174,7 @@ sdoh_zcta_wide <- sdoh_zcta %>%
   pivot_wider(names_from = MeasureID, values_from = Data_Value)
 ```
 
-# Perform data transformations
+# Data checks
 
 ```{r}
 # Display the size of the dataset
@@ -180,10 +185,15 @@ mean(ind_org_df$is_po) # ~23% use P.O. boxes
 ```
 
 ```{r}
-# Compare predictions: all orgs vs. non-P.O. box orgs
+# Compare predictions: all orgs vs. non???P.O. Box orgs
+
+# Generate predicted category distribution with CIs for all orgs
 df_all <- get_predicted_percent_ci(ind_org_df, "All organizations")
+
+# Generate the same for non???P.O. Box organizations
 df_box <- get_predicted_percent_ci(ind_org_df %>% filter(is_po != 1), "Excluding P.O. Box")
 
+# Combine both summaries into a single dataframe for plotting/comparison
 comparison_df <- bind_rows(df_all, df_box)
 
 head(comparison_df)
@@ -197,6 +207,7 @@ head(comparison_df)
 # Save the plot using the png() function
 png(filename = here("plots", "s1.png"), width = 1400, height = 1200, res = 100)
 
+# Plot predicted category distributions with 95% confidence intervals
 ggplot(comparison_df, aes(x = predicted, y = percent, fill = group)) +
   geom_col(position = position_dodge(width = 0.9), width = 0.7) +
   geom_errorbar(
@@ -219,7 +230,8 @@ dev.off()
 ```
 
 ```{r}
-# Compare prediction shares
+# Compare predicted category shares across all orgs and orgs without P.O. Boxes
+# Produce a side-by-side comparison of predicted categories with or without P.O. Boxes
 left_join(
   ind_org_df %>%
     filter(!is.na(predicted)) %>%
@@ -235,23 +247,30 @@ left_join(
 ```
 
 ```{r}
-# Filter out PO Box orgs
+# Remove P.O. Box???only organizations from the dataset
 ind_org_df <- ind_org_df %>%
   filter(is_po != 1)
 
+# Check the number of organizations after filtering
 nrow(ind_org_df) # 1,363,701
 ```
   
 # Create datasets
 
 ```{r}
-# Civic opportunity flag and score
+# Create two new variables:
+# opp_binary: 1 if the org offers any civic opportunity
+# opp_mean: average of the four opportunity indicators
+# Note: These fields already exist in the dataset ??? this step is for reproducibility.
+# The function idx_mean() computes the row-wise mean across the four binary indicators.
+
 ind_org_df <- ind_org_df %>%
   mutate(
     opp_binary = ifelse(volunteer == 1 | membership == 1 | take_action == 1 | events == 1, 1, 0),
     opp_mean = idx_mean(volunteer, membership, take_action, events)
   )
 
+# Subset to organizations that offer at least one civic opportunity
 civic_orgs <- ind_org_df %>%
   filter(opp_binary == 1)
 ```
@@ -261,136 +280,168 @@ civic_orgs <- ind_org_df %>%
 ### County 
 
 ```{r}
+# First, group by FIPS (county), internal grouping_value (e.g., chapters), and state
 cnts_counts <- ind_org_df %>%
   group_by(FIPS, grouping_value, state) %>%
   summarise(
-    b = max(opp_binary, na.rm = TRUE),
-    m = max(opp_mean, na.rm = TRUE),
-    volunteer_m = max(volunteer, na.rm = TRUE),
+    b = max(opp_binary, na.rm = TRUE),          # Whether any org in the group offers civic opportunity
+    m = max(opp_mean, na.rm = TRUE),            # Max of average opportunity score in the group
+    volunteer_m = max(volunteer, na.rm = TRUE), # Max value for each indicator within the group
     membership_m = max(membership, na.rm = TRUE),
     take_action_m = max(take_action, na.rm = TRUE),
     events_m = max(events, na.rm = TRUE)
   ) %>%
   group_by(FIPS, state) %>%
   summarise(
-    n = n(),
-    civic_org_sum = sum(b),
-    civic_opp_sum = sum(m),
+    n = n(),                                      # Number of organizational groupings in the county
+    civic_org_sum = sum(b),                      # Total number of groups with civic opportunity
+    civic_opp_sum = sum(m),                      # Sum of opportunity scores across groups
     volunteer_sum = sum(volunteer_m),
     membership_sum = sum(membership_m),
     take_action_sum = sum(take_action_m),
     events_sum = sum(events_m)
   )
 
+# Calculate the share of counties with orgs but no civic opportunity
 (cnts_counts %>%
   filter(n != 0, civic_org_sum == 0) %>%
-  nrow()) / (nrow(cnts_counts)) # 3% of counties are civic deserts
+  nrow()) / (nrow(cnts_counts)) # About 3% = civic deserts
 ```
 
 ```{r}
+# Join civic opportunity summaries with SDOH county-level data
 cnts_counts_cov <- cnts_counts %>%
   left_join(
     sdoh_county_wide %>%
-      select(-StateDesc),
+      select(-StateDesc),  # Remove verbose label column
     by = c(
-      "FIPS" = "LocationID",
-      "state" = "StateAbbr"
+      "FIPS" = "LocationID",  # Match on county FIPS code
+      "state" = "StateAbbr"   # Match on state abbreviation
     )
   )
 
+# Normalize counts by population and create derived indicators (e.g., quintiles)
 cnts_counts_cov <- cnts_counts_cov %>%
   ungroup() %>%
   mutate(
-    civic_org_sum_normalized = 100000 * civic_org_sum / TotalPopulation,
-    civic_opp_sum_normalized = 100000 * civic_opp_sum / TotalPopulation,
-    civic_opp_index = dplyr::ntile(civic_opp_sum_normalized, 5),
+    civic_org_sum_normalized = 100000 * civic_org_sum / TotalPopulation,         # Orgs per 100k
+    civic_opp_sum_normalized = 100000 * civic_opp_sum / TotalPopulation,         # Opportunities per 100k
+    civic_opp_index = dplyr::ntile(civic_opp_sum_normalized, 5),                 # Quintile index (1???5)
     volunteer_sum_normalized = 100000 * volunteer_sum / TotalPopulation,
     membership_sum_normalized = 100000 * membership_sum / TotalPopulation,
     take_action_sum_normalized = 100000 * take_action_sum / TotalPopulation,
     events_sum_normalized = 100000 * events_sum / TotalPopulation
   )
 
-round(mean(cnts_counts$n == 0), 2) # all these counties have an organization
-round(mean(cnts_counts$civic_opp_sum == 0), 2) # 3% of the counties do not have any organization offering civic opportunity
+# Sanity check: Are there any counties with no orgs or no civic opps?
+round(mean(cnts_counts$n == 0), 2)            # Should be 0 ??? all counties have orgs
+round(mean(cnts_counts$civic_opp_sum == 0), 2) # Should be ~0.03 ??? civic deserts
 
+# Drop specific SDOH indicators if not needed for analysis
 cnts_counts_cov <- cnts_counts_cov %>%
   select(-c("HCOST", "CROWD", "AGE65"))
 
-length(setdiff(cnts_counts$FIPS, sdoh_county_wide$LocationID)) # 78 counties are missing
-78 / 3281 # 2%
+# Check SDOH coverage gaps ??? how many counties missing CDC data?
+length(setdiff(cnts_counts$FIPS, sdoh_county_wide$LocationID))  # ~78 counties
+78 / 3281  # ~2% of counties missing ??? consistent with CDC suppression
 ```
 
 ```{r}
-# Save datasets
-write_csv(cnts_counts_cov %>% select(-matches("Geo")), here("data_outputs", "cnty_counts_cov.csv"))
-write_csv(cnts_counts_cov %>% select(-matches("Geo")), here("data_outputs", "cnty_counts_cov.rds"))
+# Save cleaned and merged county-level dataset to CSV
+write_csv(
+  cnts_counts_cov %>% select(-matches("Geo")),  # Remove geolocation columns before export
+  here("data_outputs", "cnty_counts_cov.csv")
+)
+
+# Save the same dataset in RDS format for fast reloading in R
+write_rds(  # Note: Should be `write_rds()` here
+  cnts_counts_cov %>% select(-matches("Geo")),
+  here("data_outputs", "cnty_counts_cov.rds")
+)
 ```
 
 ### ZIP code
 
 ```{r}
+# Summarize civic opportunity data by ZIP Code Tabulation Area (ZCTA), grouping_value, and state
 zcta_counts <- ind_org_df %>%
   group_by(ZCTA, grouping_value, state) %>%
   summarise(
-    m = max(opp_mean, na.rm = TRUE),
-    b = max(opp_binary, na.rm = TRUE),
-    volunteer_m = max(volunteer, na.rm = TRUE),
+    m = max(opp_mean, na.rm = TRUE),             # Max average civic opportunity score
+    b = max(opp_binary, na.rm = TRUE),           # Binary: any civic opportunity present
+    volunteer_m = max(volunteer, na.rm = TRUE),  # Max of individual indicators
     membership_m = max(membership, na.rm = TRUE),
     take_action_m = max(take_action, na.rm = TRUE),
     events_m = max(events, na.rm = TRUE)
   ) %>%
   group_by(ZCTA, state) %>%
   summarise(
-    n = n(),
-    civic_org_sum = sum(b),
-    civic_opp_sum = sum(m),
+    n = n(),                                      # Number of organizational groupings
+    civic_org_sum = sum(b),                      # Number offering any civic opportunity
+    civic_opp_sum = sum(m),                      # Total opportunity score
     volunteer_sum = sum(volunteer_m),
     membership_sum = sum(membership_m),
     take_action_sum = sum(take_action_m),
     events_sum = sum(events_m)
   )
 
+# Calculate what proportion of ZIPs are civic deserts
 (zcta_counts %>%
   filter(n != 0, civic_org_sum == 0) %>%
-  nrow()) / (nrow(zcta_counts)) # 17% of ZIP codes are civic deserts
+  nrow()) / (nrow(zcta_counts))  # ~17% of ZIP codes are civic deserts
 ```
 
 ```{r}
+# Join ZIP-level civic summaries with SDOH covariates from the CDC
 zcta_counts_cov <- zcta_counts %>%
   left_join(sdoh_zcta_wide, by = c("ZCTA" = "LocationID")) %>%
-  ungroup() %>%
+  ungroup()
+
+# Create population-normalized metrics and a civic opportunity quintile index
+zcta_counts_cov <- zcta_counts_cov %>%
   mutate(
-    civic_org_sum_normalized = 100000 * civic_org_sum / TotalPopulation,
-    civic_opp_sum_normalized = 100000 * civic_opp_sum / TotalPopulation,
-    civic_opp_index = ntile(civic_opp_sum_normalized, 5),
+    civic_org_sum_normalized = 100000 * civic_org_sum / TotalPopulation,          # Orgs per 100k people
+    civic_opp_sum_normalized = 100000 * civic_opp_sum / TotalPopulation,          # Opps per 100k
+    civic_opp_index = ntile(civic_opp_sum_normalized, 5),                          # Quintile index (1???5)
     volunteer_sum_normalized = 100000 * volunteer_sum / TotalPopulation,
     membership_sum_normalized = 100000 * membership_sum / TotalPopulation,
     take_action_sum_normalized = 100000 * take_action_sum / TotalPopulation,
     events_sum_normalized = 100000 * events_sum / TotalPopulation
   ) %>%
-  select(-c("HCOST", "CROWD", "AGE65"))
+  select(-c("HCOST", "CROWD", "AGE65"))  # Drop unneeded SDOH columns for simplicity
 
-length(setdiff(zcta_counts$ZCTA, sdoh_zcta_wide$LocationID)) # 2,980 ZIP codes are missing
-2980 / 30988 # 10%
+# Check ZIPs with no SDOH match ??? may reflect suppressed or rural areas
+length(setdiff(zcta_counts$ZCTA, sdoh_zcta_wide$LocationID))  # 2,980 ZIPs not matched
+2980 / 30988  # ~10% of ZIPs are missing from SDOH data
 ```
 
 ```{r}
-# Save datasets
-write_csv(zcta_counts_cov %>% select(-Geolocation), here("data_outputs", "zcta_counts_cov.csv"))
-write_csv(zcta_counts_cov %>% select(-Geolocation), here("data_outputs", "zcta_counts_cov.rds"))
+# Save ZIP-level dataset to CSV, excluding geolocation fields
+write_csv(
+  zcta_counts_cov %>% select(-Geolocation),
+  here("data_outputs", "zcta_counts_cov.csv")
+)
+
+# Save the same data in RDS format for efficient R loading
+write_rds(
+  zcta_counts_cov %>% select(-Geolocation),
+  here("data_outputs", "zcta_counts_cov.rds")
+)
 ```
 
 ## The third datasets (what organizations are)
 
 ```{r}
+# Define vector of predicted class labels (model outputs)
 class_vec <- c(
   "arts", "civic", "community", "econ", "education", "foundation",
   "health", "hobby", "housing", "professional", "religious",
   "research", "socialfraternal", "unions", "youth"
 )
 
+# Recode predicted categories into human-readable class labels
+# These will be used in summary tables and visualizations
 civic_orgs <- civic_orgs %>%
-  # filter(!is.na(predicted)) %>%
   mutate(class = case_match(
     predicted,
     class_vec[1] ~ "Arts & Cultural",
@@ -414,16 +465,20 @@ civic_orgs <- civic_orgs %>%
 ### County
 
 ```{r}
+# Group civic orgs by county and class, and count how many fall into each category
 cnty_civic_org_type <- civic_orgs %>%
   group_by(FIPS, class) %>%
-  count() %>%
-  ungroup() %>%
-  group_by(FIPS) %>%
-  mutate(freq = n / sum(n)) %>%
-  group_by(FIPS) %>%
-  mutate(primary_org_cat = class[which.max(freq)]) %>%
+  count() %>%                 # Count number of orgs in each class per county
   ungroup()
 
+# Compute share of each class within each county and identify the most common category
+cnty_civic_org_type <- cnty_civic_org_type %>%
+  group_by(FIPS) %>%
+  mutate(freq = n / sum(n)) %>%                          # Proportion of each class
+  mutate(primary_org_cat = class[which.max(freq)]) %>%   # Class with the highest share
+  ungroup()
+
+# Save county-level org type distribution
 write_csv(cnty_civic_org_type, here("data_outputs", "cnty_civic_org_type.csv"))
 write_rds(cnty_civic_org_type, here("data_outputs", "cnty_civic_org_type.rds"))
 ```
@@ -431,46 +486,55 @@ write_rds(cnty_civic_org_type, here("data_outputs", "cnty_civic_org_type.rds"))
 #### Dashboard 
 
 ```{r}
+# Count number of civic orgs by county (FIPS), state, and class
 cnty_civic_org_type_dashboard <- civic_orgs %>%
   group_by(state, FIPS, class) %>%
   count() %>%
-  ungroup() %>%
-  group_by(FIPS) %>%
-  mutate(freq = n / sum(n)) %>%
-  group_by(FIPS) %>%
-  mutate(primary_org_cat = class[which.max(freq)]) %>%
   ungroup()
 
+# For each county, compute frequency of each class and assign the dominant category
+cnty_civic_org_type_dashboard <- cnty_civic_org_type_dashboard %>%
+  group_by(FIPS) %>%
+  mutate(freq = n / sum(n)) %>%                          # Share of each org class in county
+  mutate(primary_org_cat = class[which.max(freq)]) %>%   # Dominant class
+  ungroup()
+
+# Merge with SDOH data to include population
 cnty_civic_type_dashboard <- cnty_civic_org_type_dashboard %>%
   left_join(
     sdoh_county_wide %>%
-      select(-StateDesc),
-    by = c(
-      "FIPS" = "LocationID",
-      "state" = "StateAbbr"
-    )
-  ) %>% # n
+      select(-StateDesc),                                # Drop verbose state name
+    by = c("FIPS" = "LocationID", "state" = "StateAbbr")
+  )
+
+# Final formatting: keep selected columns and compute normalized count per 100,000
+cnty_civic_type_dashboard <- cnty_civic_type_dashboard %>%
   select(state, FIPS, class, n, freq, primary_org_cat, TotalPopulation) %>%
-  mutate(normalized_n = n / TotalPopulation) %>%
+  mutate(normalized_n = n / TotalPopulation) %>%         # Count per capita
   select(state, FIPS, class, n, normalized_n, freq, primary_org_cat, TotalPopulation)
 
-# export CSV
+
+# Export final dashboard-ready dataset as CSV
 write_csv(cnty_civic_type_dashboard, here("data_outputs", "cnty_civic_type_dashboard.csv"))
 ```
 
 ### ZIP code 
 
 ```{r}
+# Group civic organizations by ZIP code and class, then count frequency
 zcta_civic_org_type <- civic_orgs %>%
   group_by(ZCTA, class) %>%
   count() %>%
-  ungroup() %>%
-  group_by(ZCTA) %>%
-  mutate(freq = n / sum(n)) %>%
-  group_by(ZCTA) %>%
-  mutate(primary_org_cat = class[which.max(freq)]) %>%
   ungroup()
 
+# Within each ZIP code, calculate class proportions and identify the dominant category
+zcta_civic_org_type <- zcta_civic_org_type %>%
+  group_by(ZCTA) %>%
+  mutate(freq = n / sum(n)) %>%                          # Class share in ZIP
+  mutate(primary_org_cat = class[which.max(freq)]) %>%   # Most frequent class
+  ungroup()
+
+# Save the ZIP-level classification summary as CSV and RDS
 write_csv(zcta_civic_org_type, here("data_outputs", "zcta_civic_org_type.csv"))
 write_rds(zcta_civic_org_type, here("data_outputs", "zcta_civic_org_type.rds"))
 ```

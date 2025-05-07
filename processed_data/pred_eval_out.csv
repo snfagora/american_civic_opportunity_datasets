@@ -1,0 +1,91 @@
+.metric,.estimator,.estimate,model,class
+bal_accuracy,binary,0.9055006096734859,Lasso,artsculture
+f_meas,binary,0.9083665338645418,Lasso,artsculture
+bal_accuracy,binary,0.9096667118276656,Random forest,artsculture
+f_meas,binary,0.9133858267716535,Random forest,artsculture
+bal_accuracy,binary,0.9177618208914782,XGboost,artsculture
+f_meas,binary,0.9186991869918698,XGboost,artsculture
+bal_accuracy,binary,0.8710622710622711,Lasso,civic
+f_meas,binary,0.87671232876712335,Lasso,civic
+bal_accuracy,binary,0.8278846153846153,Random forest,civic
+f_meas,binary,0.8317757009345793,Random forest,civic
+bal_accuracy,binary,0.8663461538461539,XGboost,civic
+f_meas,binary,0.8738738738738739,XGboost,civic
+bal_accuracy,binary,0.7384987893462469,Lasso,community
+f_meas,binary,0.743801652892562,Lasso,community
+bal_accuracy,binary,0.7891682096567441,Random forest,community
+f_meas,binary,0.7950819672131149,Random forest,community
+bal_accuracy,binary,0.7934054977923373,XGboost,community
+f_meas,binary,0.7999999999999999,XGboost,community
+bal_accuracy,binary,0.9564516129032259,Lasso,econ
+f_meas,binary,0.956043956043956,Lasso,econ
+bal_accuracy,binary,0.9455197132616487,Random forest,econ
+f_meas,binary,0.945054945054945,Random forest,econ
+bal_accuracy,binary,0.9129032258064516,XGboost,econ
+f_meas,binary,0.9130434782608695,XGboost,econ
+bal_accuracy,binary,0.8537960498669281,Lasso,education
+f_meas,binary,0.8547717842323652,Lasso,education
+bal_accuracy,binary,0.8996708222440117,Random forest,education
+f_meas,binary,0.8991596638655461,Random forest,education
+bal_accuracy,binary,0.886748844375963,XGboost,education
+f_meas,binary,0.8831168831168832,XGboost,education
+bal_accuracy,binary,0.8169849246231156,Lasso,foundations
+f_meas,binary,0.8123393316195372,Lasso,foundations
+bal_accuracy,binary,0.8371356783919598,Random forest,foundations
+f_meas,binary,0.8395061728395062,Random forest,foundations
+bal_accuracy,binary,0.834535175879397,XGboost,foundations
+f_meas,binary,0.8307692307692307,XGboost,foundations
+bal_accuracy,binary,0.8113870967741936,Lasso,health
+f_meas,binary,0.8171206225680934,Lasso,health
+bal_accuracy,binary,0.8674838709677419,Random forest,health
+f_meas,binary,0.8674698795180723,Random forest,health
+bal_accuracy,binary,0.8714193548387097,XGboost,health
+f_meas,binary,0.8688524590163934,XGboost,health
+bal_accuracy,binary,0.9173553719008265,Lasso,hobby
+f_meas,binary,0.9180327868852458,Lasso,hobby
+bal_accuracy,binary,0.9173553719008265,Random forest,hobby
+f_meas,binary,0.9200000000000002,Random forest,hobby
+bal_accuracy,binary,0.9338842975206612,XGboost,hobby
+f_meas,binary,0.935483870967742,XGboost,hobby
+bal_accuracy,binary,0.8891071670505352,Lasso,housing
+f_meas,binary,0.8941176470588236,Lasso,housing
+bal_accuracy,binary,0.8808427042406178,Random forest,housing
+f_meas,binary,0.8853754940711461,Random forest,housing
+bal_accuracy,binary,0.8643137786207831,XGboost,housing
+f_meas,binary,0.8674698795180722,XGboost,housing
+bal_accuracy,binary,0.8616525423728814,Lasso,professional
+f_meas,binary,0.8653061224489795,Lasso,professional
+bal_accuracy,binary,0.8278248587570621,Random forest,professional
+f_meas,binary,0.8284518828451883,Random forest,professional
+bal_accuracy,binary,0.8486581920903955,XGboost,professional
+f_meas,binary,0.8461538461538461,XGboost,professional
+bal_accuracy,binary,0.8870056497175142,Lasso,religious
+f_meas,binary,0.891566265060241,Lasso,religious
+bal_accuracy,binary,0.8867937853107344,Random forest,religious
+f_meas,binary,0.8888888888888888,Random forest,religious
+bal_accuracy,binary,0.8870056497175142,XGboost,religious
+f_meas,binary,0.891566265060241,XGboost,religious
+bal_accuracy,binary,0.7926829268292683,Lasso,research
+f_meas,binary,0.8152173913043479,Lasso,research
+bal_accuracy,binary,0.8658536585365854,Random forest,research
+f_meas,binary,0.872093023255814,Random forest,research
+bal_accuracy,binary,0.8658536585365854,XGboost,research
+f_meas,binary,0.8705882352941177,XGboost,research
+bal_accuracy,binary,0.8885652350629996,Lasso,socialfraternal
+f_meas,binary,0.8789237668161435,Lasso,socialfraternal
+bal_accuracy,binary,0.8681411732827531,Random forest,socialfraternal
+f_meas,binary,0.8620689655172413,Random forest,socialfraternal
+bal_accuracy,binary,0.9051957729304972,XGboost,socialfraternal
+f_meas,binary,0.9012875536480687,XGboost,socialfraternal
+bal_accuracy,binary,0.9372175141242938,Lasso,unions
+f_meas,binary,0.9382716049382717,Lasso,unions
+bal_accuracy,binary,0.916454802259887,Random forest,unions
+f_meas,binary,0.92,Random forest,unions
+bal_accuracy,binary,0.9204802259887006,XGboost,unions
+f_meas,binary,0.9224489795918367,XGboost,unions
+bal_accuracy,binary,0.8197080291970803,Lasso,youth
+f_meas,binary,0.8150943396226417,Lasso,youth
+bal_accuracy,binary,0.8494457961611246,Random forest,youth
+f_meas,binary,0.8519855595667871,Random forest,youth
+bal_accuracy,binary,0.8348472560151392,XGboost,youth
+f_meas,binary,0.8398576512455516,XGboost,youth
