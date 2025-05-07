@@ -6,3 +6,4 @@
 # Skip these large files
 raw_data/ind_org_df.rds
 raw_data/ind_org_df.csv
+processed_data/civic_orgs.csv
