@@ -72,7 +72,7 @@ Each observation includes:
 
 ### Dataset 2: ZIP Code- and County-Level Aggregated Civic Opportunity Counts
 
-Derived from Dataset 1, this dataset aggregates civic opportunity indicators and socioeconomic characteristics at the ZIP code (ZCTA) and county levels. Each observation corresponds to a geographic unit and includes counts of civic opportunity types, a composite index, normalized indicators, and contextual variables from the American Community Survey (ACS).
+Derived from Dataset 1, this dataset aggregates civic opportunity indicators and socioeconomic characteristics at the ZIP code (ZCTA) and county levels. Each observation corresponds to a geographic unit and includes counts of civic opportunity types, a composite score and index, normalized indicators, and contextual variables from the American Community Survey (ACS).
 
 Each observation includes:
 
