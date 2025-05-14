@@ -26,7 +26,7 @@ normalize <- function(x) {
 cnty_pred_plot <- function(var, var_name) {
   var <- enquo(var)
   formula <- as.formula(glue("civic_opp_sum_normalized ~ {quo_name(var)}"))
-  model <- lm(formula, data = cnts_counts_cov)
+  model <- lm(formula, data = cnty_counts_cov)
   
   tidy_model <- tidy(model, conf.int = TRUE)
   coeff_info <- tidy_model %>%
@@ -40,10 +40,10 @@ cnty_pred_plot <- function(var, var_name) {
   conf_high <- coeff_info[3]
   coeff_label <- glue("Coefficient: {round(coeff, 2)} [95% CI: {round(conf_low, 2)}, {round(conf_high, 2)}]")
   
-  ci95 <- predict(model, cnts_counts_cov, interval = "confidence", level = 0.95) %>%
+  ci95 <- predict(model, cnty_counts_cov, interval = "confidence", level = 0.95) %>%
     as.data.frame()
   
-  cnts_counts_cov %>%
+  cnty_counts_cov %>%
     bind_cols(ci95) %>%
     ggplot(aes(x = !!var, y = civic_opp_sum_normalized)) +
     geom_jitter(alpha = 0.2) +
@@ -156,7 +156,7 @@ cor_fun <- function(x) {
 
 # Function to bind county and ZIP-code summaries
 bind_cnty_zcta_summaries <- function(var, var_name) {
-  cnts_state_avg_se <- cnts_counts_cov %>%
+  cnty_state_avg_se <- cnty_counts_cov %>%
     group_by(state) %>%
     summarize(avg = mean_no_na({{var}}),
               se = std_no_na({{var}})) %>%
@@ -168,7 +168,7 @@ bind_cnty_zcta_summaries <- function(var, var_name) {
               se = std_no_na({{var}})) %>%
     mutate(unit = "Zipcode")
   
-  bind_rows(cnts_state_avg_se, zcta_state_avg_se) %>%
+  bind_rows(cnty_state_avg_se, zcta_state_avg_se) %>%
     filter(state != "DC") %>%
     mutate(var = var_name)
 }

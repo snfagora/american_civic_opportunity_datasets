@@ -200,16 +200,13 @@ unique(summary_df_long$civic_score_group)
 summary_df_long <- summary_df_long %>%
   mutate(metric = str_to_title(metric))  # e.g., "asset" → "Asset"
 
-# Open a PNG graphics device
-png(filename = here::here("plots", "figure4.png"), width = 1200, height = 900, res = 120)
-
-# Create grouped bar chart with error bars and text labels
-ggplot(summary_df_long, aes(x = factor(civic_score_group), y = boot_result_median, group = metric)) +
+# Create the plot object
+figure4_plot <- ggplot(summary_df_long, aes(x = factor(civic_score_group), y = boot_result_median, group = metric)) +
   geom_col(aes(fill = metric), position = position_dodge(width = 0.8), width = 0.7, alpha = 0.7) +
   geom_errorbar(
     aes(ymin = boot_result_ci_low, ymax = boot_result_ci_high, color = metric),
     width = 0.3,
-    linewidth = 1.5,  # Make thicker
+    linewidth = 1.5,
     position = position_dodge(width = 0.8)
   ) +
   geom_point(
@@ -218,7 +215,7 @@ ggplot(summary_df_long, aes(x = factor(civic_score_group), y = boot_result_media
     size = 2
   ) +
   geom_text(
-    aes(label = scales::label_dollar()(boot_result_median)),  # No scale or suffix
+    aes(label = scales::label_dollar()(boot_result_median)),
     position = position_dodge(width = 0.8),
     vjust = -0.5,
     size = 4
@@ -232,14 +229,29 @@ ggplot(summary_df_long, aes(x = factor(civic_score_group), y = boot_result_media
     subtitle = "95% confidence intervals are created by bootstrapping"
   ) +
   scale_y_continuous(
-    labels = scales::label_dollar(),  # Full dollar format, e.g., $125,000
+    labels = scales::label_dollar(),
     expand = expansion(mult = c(0, 0.1))
   ) +
   theme_minimal(base_size = 14) +
-  guides(color = guide_legend(override.aes = list(fill = NA)))  # Combine color & fill legends
+  guides(color = guide_legend(override.aes = list(fill = NA)))
 
-# Close PNG device
-dev.off()
+# Save as PNG
+ggsave(
+  filename = here("plots", "figure4.png"),
+  plot = figure4_plot,
+  width = 12,
+  height = 9,
+  dpi = 300
+)
+
+# Save as high-quality JPG
+ggsave(
+  filename = here("plots", "figure4.jpg"),
+  plot = figure4_plot,
+  width = 12,
+  height = 9,
+  dpi = 300
+)
 ```
 
 ## The second dataset (what we do)
@@ -253,23 +265,39 @@ dev.off()
 # FIGURE 5
 ################################################################################
 
-# Combine six SDOH predictor plots into one figure for counties
-wrap_plots(
-  cnty_pred_plot(REMNRTY, "Persons of racial or ethnic minority status"),        # Race
-  cnty_pred_plot(POV150, "Persons living below 150% of the poverty level"),         # Poverty
-  cnty_pred_plot(NOHSDP, "No high school diploma among adults aged 25 years or older"),# Education
-  cnty_pred_plot(SNGPNT, "Single-parent households"),                                    # Family structure
-  cnty_pred_plot(UNEMP, "Unemployment among people 16 years and older"),                  # Labor force
-  cnty_pred_plot(BROAD, "No broadband internet subscription among households"),    # Internet access
+# Create the combined plot
+figure5_plot <- wrap_plots(
+  cnty_pred_plot(REMNRTY, "Persons of racial or ethnic minority status"),
+  cnty_pred_plot(POV150, "Persons living below 150% of the poverty level"),
+  cnty_pred_plot(NOHSDP, "No high school diploma among adults aged 25 years or older"),
+  cnty_pred_plot(SNGPNT, "Single-parent households"),
+  cnty_pred_plot(UNEMP, "Unemployment among people 16 years and older"),
+  cnty_pred_plot(BROAD, "No broadband internet subscription among households"),
   ncol = 3
-) + plot_annotation(
-      tag_levels = "a",      # Labels panels (a), (b), ...
-      title = "Unit: County" # Overall figure title
 ) +
-  plot_layout(guides = "collect") # Collect legends into a single guide
+  plot_annotation(
+    tag_levels = "a",
+    title = "Unit: County"
+  ) +
+  plot_layout(guides = "collect")
 
+# Save as PNG
+ggsave(
+  filename = here("plots", "figure5.png"),
+  plot = figure5_plot,
+  width = 14,
+  height = 12,
+  dpi = 300
+)
 
-ggsave(here("plots", "figure5.png"), width = 14, height = 12)
+# Save as high-quality JPG
+ggsave(
+  filename = here("plots", "figure5.jpg"),
+  plot = figure5_plot,
+  width = 14,
+  height = 12,
+  dpi = 300
+)
 ```
 
 ### ZIP code 
@@ -281,22 +309,39 @@ ggsave(here("plots", "figure5.png"), width = 14, height = 12)
 # FIGURE 6
 ################################################################################
 
-# Combine six SDOH predictor plots into one figure for ZIP codes
-wrap_plots(
-  zcta_pred_plot(REMNRTY, "Persons of racial or ethnic minority status"),         # Race
-  zcta_pred_plot(POV150, "Persons living below 150% of the poverty level"),       # Poverty
-  zcta_pred_plot(NOHSDP, "No high school diploma among adults aged 25 years or older"), # Education
-  zcta_pred_plot(SNGPNT, "Single-parent households"),                              # Family structure
-  zcta_pred_plot(UNEMP, "Unemployment among people 16 years and older"),           # Labor force
-  zcta_pred_plot(BROAD, "No broadband internet subscription among households"),    # Internet access
+# Create the combined ZIP code plot
+figure6_plot <- wrap_plots(
+  zcta_pred_plot(REMNRTY, "Persons of racial or ethnic minority status"),
+  zcta_pred_plot(POV150, "Persons living below 150% of the poverty level"),
+  zcta_pred_plot(NOHSDP, "No high school diploma among adults aged 25 years or older"),
+  zcta_pred_plot(SNGPNT, "Single-parent households"),
+  zcta_pred_plot(UNEMP, "Unemployment among people 16 years and older"),
+  zcta_pred_plot(BROAD, "No broadband internet subscription among households"),
   ncol = 3
-) + plot_annotation(
-      tag_levels = "a",       # Labels panels (a), (b), ...
-      title = "Unit: ZIP code" # Overall figure title
 ) +
-  plot_layout(guides = "collect") # Collect legends into a single guide
+  plot_annotation(
+    tag_levels = "a",
+    title = "Unit: ZIP code"
+  ) +
+  plot_layout(guides = "collect")
 
-ggsave(here("plots", "figure6.png"), width = 14, height = 12)
+# Save as high-resolution PNG
+ggsave(
+  filename = here("plots", "figure6.png"),
+  plot = figure6_plot,
+  width = 14,
+  height = 12,
+  dpi = 300
+)
+
+# Save as high-resolution JPG
+ggsave(
+  filename = here("plots", "figure6.jpg"),
+  plot = figure6_plot,
+  width = 14,
+  height = 12,
+  dpi = 300
+)
 ```
 
 ## The third dataset (who we are)
@@ -400,19 +445,36 @@ binded_sums <- bind_rows(sum_cnts_civic_org_type %>%
 # FIGURE 7
 ################################################################################
 
-# Plot combined OLS estimates with 95% CIs, faceted by unit
-binded_sums %>%
+# Create the plot object
+figure7_plot <- binded_sums %>%
   ggplot(aes(x = fct_reorder(name, estimate), y = estimate, ymax = conf.high, ymin = conf.low)) +
   geom_col(alpha = 0.5, position = position_dodge(width = 0.9)) +
   geom_errorbar(position = position_dodge(width = 0.9), width = 0.3) +
   coord_flip() +
   labs(
-    title = "Civic opportunity dependendcy on religious or social fraternal organizations",
+    title = "Civic opportunity dependency on religious or social fraternal organizations",
     x = "",
     y = "Estimated OLS Coefficients",
-    fill = "Civic opportunity organization type") +
+    fill = "Civic opportunity organization type"
+  ) +
   geom_hline(yintercept = 0, col = "red", linetype = 2) +
   facet_wrap(~unit)
 
-ggsave(here("plots", "figure7.png"), width = 10, height = 8)
+# Save as high-resolution PNG
+ggsave(
+  filename = here("plots", "figure7.png"),
+  plot = figure7_plot,
+  width = 10,
+  height = 8,
+  dpi = 300
+)
+
+# Save as high-resolution JPG
+ggsave(
+  filename = here("plots", "figure7.jpg"),
+  plot = figure7_plot,
+  width = 10,
+  height = 8,
+  dpi = 300
+)
 ```

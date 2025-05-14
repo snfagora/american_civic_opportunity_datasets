@@ -27,7 +27,8 @@ pacman::p_load(
   arrow,        # Apache Parquet support
   DiagrammeR,   # Diagram creation and visualization
   DiagrammeRsvg, # SVG export for diagrams
-  rsvg          # Convert SVG to other formats
+  rsvg,          # Convert SVG to other formats
+  magick         # Covnert image to other formats
 )
 
 # Load a GitHub package for additional functionality
@@ -133,7 +134,17 @@ digraph civic_pipeline {
 
 # Convert diagram to SVG and PNG formats for publication
 svg <- export_svg(graph) # Export as SVG
-charToRaw(svg) %>% rsvg_png(here("plots", "figure1.png")) # Convert to PNG
+
+charToRaw(svg) %>% 
+  rsvg_png(here("plots", "figure1.png")) # Convert to PNG
+
+# Convert SVG (as raw) to a bitmap image (PNG format first)
+img <- charToRaw(svg) %>% 
+  rsvg::rsvg() %>% 
+  magick::image_read()
+
+# Save as high-resolution JPG (300 dpi)
+image_write(img, path = here("plots", "figure1.jpg"), format = "jpeg", density = "300x300")
 ```
 
 # Load and preprocess data
@@ -143,11 +154,11 @@ charToRaw(svg) %>% rsvg_png(here("plots", "figure1.png")) # Convert to PNG
 ind_org_df <- vroom::vroom(here("raw_data", "ind_org_df.csv")) 
 
 # Export the file to parquet   
-# ?????? Note: This may exceed GitHub$)C!/s file size limit???exclude from version control
+# ?????? Note: This may exceed GitHub’s file size limit???exclude from version control
 arrow::write_parquet(ind_org_df, here("raw_data", "ind_org_df.parquet"))
 
 # Export the file to RDS 
-# ?????? Note: This may exceed GitHub$)C!/s file size limit???exclude from version control
+# ?????? Note: This may exceed GitHub’s file size limit???exclude from version control
 readr::write_rds(ind_org_df, here("raw_data", "ind_org_df.rds"))
 
 # Display the number of organizations in the dataset
