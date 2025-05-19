@@ -40,6 +40,7 @@ Each observation includes:
   - `city`: city name listed in the IRS record  
   - `FIPS`: county FIPS code  
   - `ZCTA`: ZIP Code Tabulation Area
+  - `is_po`: indicates whether the organization lists a P.O. Box as its mailing address (1 = yes, 0 = no)  
 
 - Civic opportunity indicators:  
   - `membership`, `volunteer`, `events`, `take_action`: binary variables indicating whether the organization provides each type of civic opportunity (1 = provides the opportunity; 0 = does not provide it or information is unavailable)  
@@ -49,8 +50,7 @@ Each observation includes:
 - Organizational type:  
   - `predicted`: machine-learned classification of the organization (e.g., religious, political, professional)
 
-- Address metadata:  
-  - `is_po`: indicates whether the organization lists a P.O. Box as its mailing address (1 = yes, 0 = no)  
+- Federated indicator:  
   - `grouping_value`: an anonymized internal identifier used to track federated organizations (e.g., national networks with local chapters)
 
 - Financial attributes:  
