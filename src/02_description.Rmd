@@ -110,7 +110,7 @@ zcta_civic_org_type %>%
 
 # Description
 
-## The first datasets 
+## Datasets 2-3
 
 ### Table 5 
 
@@ -264,7 +264,7 @@ ggsave(
 )
 ```
 
-## The second datasets 
+## Datasets 4-5
 
 ```{r}
 # Combine county and ZIP-level datasets into a long-format summary

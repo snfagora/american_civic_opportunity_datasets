@@ -19,10 +19,10 @@ This repository contains datasets and source files used to produce the MapAgora 
 This project provides three core datasets:
 
 - **Dataset 1**: Organization-level dataset of de-identified nonprofit organizations  
-- **Dataset 2**: Aggregated civic opportunity counts at the ZIP code and county levels  
-- **Dataset 3**: Aggregated organizational type breakdowns at the ZIP code and county levels  
+- **Datasets 2-3**: Aggregated civic opportunity counts at the county and ZIP code levels  
+- **Datasets 4-5**: Aggregated organizational type breakdowns at the county and ZIP code levels  
 
-Datasets 2 and 3 are derived from Dataset 1 using [`01_dataset_generation.Rmd`](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/src/01_dataset_generation.Rmd), which also generates Figure 1 and Supplementary Table S2 and Figure S1.
+Datasets 2-5 are derived from Dataset 1 using [`01_dataset_generation.Rmd`](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/src/01_dataset_generation.Rmd), which also generates Figure 1 and Supplementary Table S2 and Figure S1.
 
 ---
 
@@ -70,7 +70,7 @@ Each observation includes:
 
 ---
 
-### Dataset 2: ZIP Code- and County-Level Aggregated Civic Opportunity Counts
+### Datasets 2-3: County- and ZIP Code-Level Aggregated Civic Opportunity Counts
 
 Derived from Dataset 1, this dataset aggregates civic opportunity indicators and socioeconomic characteristics at the ZIP code (ZCTA) and county levels. Each observation corresponds to a geographic unit and includes counts of civic opportunity types, a composite score and index, normalized indicators, and contextual variables from the American Community Survey (ACS).
 
@@ -124,7 +124,7 @@ Each observation includes:
 
 ---
 
-### Dataset 3: ZIP Code- and County-Level Civic Opportunity Provider Types
+### Datasets 4-5: County- and ZIP Code-Level Civic Opportunity Provider Types
 
 Also derived from Dataset 1, this dataset summarizes the types of organizations that provide civic opportunities at the ZIP code and county levels. Each observation corresponds to a unique geography-organization type pair and enables analysis of regional patterns in the composition of civic infrastructure.
 

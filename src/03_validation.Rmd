@@ -254,7 +254,7 @@ ggsave(
 )
 ```
 
-## The second dataset (what we do)
+## The second and third datasets (what we do)
 
 ### County 
 
@@ -344,7 +344,7 @@ ggsave(
 )
 ```
 
-## The third dataset (who we are)
+## The fourth and fifth dataset (who we are)
 
 ### County 
 

@@ -154,11 +154,11 @@ image_write(img, path = here("plots", "figure1.jpg"), format = "jpeg", density =
 ind_org_df <- vroom::vroom(here("raw_data", "ind_org_df.csv")) 
 
 # Export the file to parquet   
-# ?????? Note: This may exceed GitHub’s file size limit???exclude from version control
+# ?????? Note: This may exceed GitHub???s file size limit???exclude from version control
 arrow::write_parquet(ind_org_df, here("raw_data", "ind_org_df.parquet"))
 
 # Export the file to RDS 
-# ?????? Note: This may exceed GitHub’s file size limit???exclude from version control
+# ?????? Note: This may exceed GitHub???s file size limit???exclude from version control
 readr::write_rds(ind_org_df, here("raw_data", "ind_org_df.rds"))
 
 # Display the number of organizations in the dataset
@@ -347,7 +347,7 @@ civic_orgs <- ind_org_df %>%
   filter(opp_binary == 1)
 ```
 
-## The second datasets (what organizations do)
+## The second and third datasets (what organizations do)
 
 ### County 
 
@@ -501,7 +501,7 @@ write_rds(
 )
 ```
 
-## The third datasets (what organizations are)
+## The fourth and fifth datasets (what organizations are)
 
 ```{r}
 # Define vector of predicted class labels (model outputs)
