@@ -111,16 +111,16 @@ Each observation includes:
   - `REMNRTY`: share of racial or ethnic minority residents
 
 **Dimensions:**
-- ZIP code level: 30,988 rows $\times$ 24 columns  
 - County level: 3,281 rows $\times$ 24 columns
-
-**ZIP Code Level Files:**
-- [`zcta_counts_cov.csv`](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/data_outputs/zcta_counts_cov.csv)  
-- [`zcta_counts_cov.rds`](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/data_outputs/zcta_counts_cov.rds)
+- ZIP code level: 30,988 rows $\times$ 24 columns  
 
 **County Level Files:**
 - [`cnty_counts_cov.csv`](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/data_outputs/cnty_counts_cov.csv)  
 - [`cnty_counts_cov.rds`](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/data_outputs/cnty_counts_cov.rds)
+
+**ZIP Code Level Files:**
+- [`zcta_counts_cov.csv`](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/data_outputs/zcta_counts_cov.csv)  
+- [`zcta_counts_cov.rds`](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/data_outputs/zcta_counts_cov.rds)
 
 ---
 
@@ -147,16 +147,16 @@ Each observation includes:
   - `primary_org_cat`: the most common civic opportunity organization type in the geography; appears once per unit
 
 **Dimensions:**
-- ZIP code level: 150,162 rows $\times$ 5 columns  
 - County level: 29,687 rows $\times$ 5 columns
-
-**ZIP Code Level Files:**
-- [`zcta_civic_org_type.csv`](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/data_outputs/zcta_civic_org_type.csv)  
-- [`zcta_civic_org_type.rds`](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/data_outputs/zcta_civic_org_type.rds)
+- ZIP code level: 150,162 rows $\times$ 5 columns  
 
 **County Level Files:**
 - [`cnty_civic_org_type.csv`](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/data_outputs/cnty_civic_org_type.csv)  
 - [`cnty_civic_org_type.rds`](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/data_outputs/cnty_civic_org_type.rds)
+
+**ZIP Code Level Files:**
+- [`zcta_civic_org_type.csv`](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/data_outputs/zcta_civic_org_type.csv)  
+- [`zcta_civic_org_type.rds`](https://github.com/snfagora/american_civic_opportunity_datasets/blob/main/data_outputs/zcta_civic_org_type.rds)
 
 ---
 
